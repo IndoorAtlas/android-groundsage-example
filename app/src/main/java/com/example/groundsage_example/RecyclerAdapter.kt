@@ -17,7 +17,7 @@ class RecyclerAdapter(private val rows: List<TableRow>) :
     class HeaderRow(val title: String) : TableRow
     class DensityRow(val density: IAGSVenue.IAGSDensityLevel) : TableRow
     class FloorRow(val floor: IAGSVenue.IAGSFloor) : TableRow
-    class AreaRow(val areaProperty: IAGSVenue.IAGSAreaProperty, val densityProperty: IAGSVenueDensity.IAGSDensityProperty?): TableRow
+    class AreaRow(val areaProperty: IAGSVenue.IAGSAreaProperty, var densityProperty: IAGSVenueDensity.IAGSDensityProperty?): TableRow
 
     companion object {
         private const val TYPE_HEADER = 0
@@ -104,14 +104,13 @@ class RecyclerAdapter(private val rows: List<TableRow>) :
         val areaRow = holder as AreaViewHolder
         areaRow.areaName.text = row.areaProperty.description
         areaRow.floorLevel.text = String.format("floor level %d", row.areaProperty.floorLevel)
-        if (row.densityProperty != null){
+        row.densityProperty?.let {
             areaRow.densityPropertyView.visibility = View.VISIBLE
-            areaRow.colorView.setBackgroundColor(row.densityProperty.densityColor.toInt())
-            areaRow.count.text = String.format("count: %d", row.densityProperty.count)
-            areaRow.densityValue.text = String.format("density: %.2f", row.densityProperty.density)
-            areaRow.densityLevel.text = String.format("density level: %d", row.densityProperty.densityLevel)
-
-        }else{
+            areaRow.colorView.setBackgroundColor(it.densityColor.toInt())
+            areaRow.count.text = String.format("count: %d", it.count)
+            areaRow.densityValue.text = String.format("density: %.2f", it.density)
+            areaRow.densityLevel.text = String.format("density level: %d", it.densityLevel)
+        } ?: run {
             areaRow.densityPropertyView.visibility = View.GONE
         }
     }
