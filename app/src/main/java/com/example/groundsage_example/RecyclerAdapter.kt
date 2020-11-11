@@ -1,5 +1,6 @@
 package com.example.groundsage_example
 
+import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,14 +11,20 @@ import com.indooratlas.sdk.groundsage.data.IAGSVenue
 import com.indooratlas.sdk.groundsage.data.IAGSVenueDensity
 
 
-class RecyclerAdapter(private val rows: List<TableRow>) :
+class RecyclerAdapter(private val rows: List<TableRow>, context: Context) :
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+
+    private val clickHandler: ClickEventHandler = context as ClickEventHandler
 
     interface TableRow
     class HeaderRow(val title: String) : TableRow
-    class DensityRow(val density: IAGSVenue.IAGSDensityLevel) : TableRow
+    class DensityRow(val density: IAGSVenue.IAGSDensityLevelConfig) : TableRow
     class FloorRow(val floor: IAGSVenue.IAGSFloor) : TableRow
     class AreaRow(val areaProperty: IAGSVenue.IAGSAreaProperty, var densityProperty: IAGSVenueDensity.IAGSDensityProperty?): TableRow
+
+    interface ClickEventHandler {
+        fun forwardClick(holder: FloorViewHolder)
+    }
 
     companion object {
         private const val TYPE_HEADER = 0
@@ -35,6 +42,7 @@ class RecyclerAdapter(private val rows: List<TableRow>) :
     class FloorViewHolder(itemView: View): RecyclerView.ViewHolder(itemView){
         val name = itemView.findViewById(R.id.floorName) as TextView
         val floorLevel = itemView.findViewById(R.id.floorLevel) as TextView
+        var floor = -1
     }
 
     class AreaViewHolder(itemView: View): RecyclerView.ViewHolder(itemView){
@@ -52,14 +60,18 @@ class RecyclerAdapter(private val rows: List<TableRow>) :
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        return when (viewType){
+        when (viewType){
             TYPE_DENSITY -> {
                 val v = LayoutInflater.from(parent.context).inflate(R.layout.item_density, parent, false)
                 return DensityViewHolder(v)
             }
             TYPE_FLOOR -> {
                 val v = LayoutInflater.from(parent.context).inflate(R.layout.item_floor, parent, false)
-                return FloorViewHolder(v)
+                return FloorViewHolder(v).also { floorViewHolder ->
+                    v.setOnClickListener {
+                        clickHandler.forwardClick(floorViewHolder)
+                    }
+                }
             }
             TYPE_AREA -> {
                 val v = LayoutInflater.from(parent.context).inflate(R.layout.item_area, parent, false)
@@ -78,7 +90,7 @@ class RecyclerAdapter(private val rows: List<TableRow>) :
         when (holder.itemViewType) {
             TYPE_DENSITY -> onBindDensity(holder, rows[position] as DensityRow)
             TYPE_FLOOR -> onBindFloor(holder, rows[position] as FloorRow)
-            TYPE_AREA ->onBindArea(holder, rows[position] as AreaRow)
+            TYPE_AREA -> onBindArea(holder, rows[position] as AreaRow)
             TYPE_HEADER -> onBindHeader(holder, rows[position] as HeaderRow)
             else -> throw IllegalArgumentException()
         }
@@ -98,6 +110,7 @@ class RecyclerAdapter(private val rows: List<TableRow>) :
         val floorRow = holder as FloorViewHolder
         floorRow.name.text = row.floor.name
         floorRow.floorLevel.text = String.format("floor level %d", row.floor.floorLevel)
+        floorRow.floor = row.floor.floorLevel
     }
 
     private fun onBindArea(holder: RecyclerView.ViewHolder, row: AreaRow){
