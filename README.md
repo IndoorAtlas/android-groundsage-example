@@ -4,13 +4,12 @@
 
 ### Prerequisite
 
-* Xcode 12+
-* Min. iOS version: 11
+* Android Studio 4.0+ & Java
+* `gem install bundler`
+* Min. Android 6.0 (API level 24)
 
-### Build example app in Xcode
+### Build example app in Android Studio
 
-* Checkout repository `git clone git@github.com:IndoorAtlas/ios-groundsage-example.git`
-* Run `pod install`
-* Run `open GroundSageExample.xcworkspace` (NOT `xcodeproj`) in XCode
-* Set your api key and api secret by adding `IAGSApiKey` and `IAGSSecretKey` into `info.plist`
-* Build the `GroundSageExample` target in XCode
+* Checkout repository `git clone git@github.com:IndoorAtlas/android-groundsage-example.git`
+* For input Indooratlas API key and secret , set meta data `IAGSAPIKey` and `IAGSSecretKey` into application manifest 
+* Open the project in Adroid Studio and build
