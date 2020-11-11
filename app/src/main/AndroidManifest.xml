@@ -26,8 +26,11 @@
         </activity>
         <activity
             android:name=".GMapActivity"
-            android:label="@string/title_activity_g_map"/>
-
+            android:label="@string/title_activity_g_map"
+            android:theme="@style/AppTheme.NoActionBar"/>
+        <meta-data
+            android:name="android.support.PARENT_ACTIVITY"
+            android:value="MainActivity" />
         <meta-data
             android:name="com.google.android.maps.v2.API_KEY"
             android:value="AIzaSyCfJU9P_PL4eqj6WUk_vm0BzkDADgFFM2Y" />

@@ -6,16 +6,12 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.example.groundsage_example.RecyclerAdapter.*
 import com.indooratlas.sdk.groundsage.IAGSManager
 import com.indooratlas.sdk.groundsage.IAGSManagerListener
-import com.indooratlas.sdk.groundsage.data.IAGSVenue
 import com.indooratlas.sdk.groundsage.data.IAGSVenueDensity
-import kotlinx.android.synthetic.main.item_floor.view.*
-import java.io.Serializable
 
 class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler {
 
@@ -27,7 +23,6 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
         recyclerView = findViewById<RecyclerView>(R.id.densityListView)
 
         IAGSManager.getInstance(this).setApiKey(
