@@ -25,11 +25,6 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
         setContentView(R.layout.activity_main)
         recyclerView = findViewById<RecyclerView>(R.id.densityListView)
 
-        IAGSManager.getInstance(this).setApiKey(
-            "5696681a-03c7-4c50-bbfd-d145a3b34ed3",
-            "PTxs0YMAwTl3Mt1/25hwV5cdZGAK1QMaQahSMpBwxGbh69QwZprjHUGuelcubp0i5VeLTFqTbF+bPCCyVcBIpbZCIKKTwtTAp/1QRLTpddZDd1KHvZYy2fBnZ34kEw=="
-        )
-
         IAGSManager.getInstance(this).requestVenueInfo { venues, error ->
             if (venues != null) {
                 Venue.setVenue(venues[0])

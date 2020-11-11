@@ -35,14 +35,11 @@
             android:name="com.google.android.maps.v2.API_KEY"
             android:value="AIzaSyCfJU9P_PL4eqj6WUk_vm0BzkDADgFFM2Y" />
         <meta-data
-            android:name="IAGSCustomEndpoint"
-            android:value="https://sit-crowd-density-api.indooratlas.com" />
-        <!--        <meta-data-->
-        <!--            android:name="IAGSApiKey"-->
-        <!--            android:value="5696681a-03c7-4c50-bbfd-d145a3b34ed3" />-->
-        <!--        <meta-data-->
-        <!--            android:name="IAGSSecretKey"-->
-        <!--            android:value="PTxs0YMAwTl3Mt1/25hwV5cdZGAK1QMaQahSMpBwxGbh69QwZprjHUGuelcubp0i5VeLTFqTbF+bPCCyVcBIpbZCIKKTwtTAp/1QRLTpddZDd1KHvZYy2fBnZ34kEw==" />-->
+            android:name="IAGSApiKey"
+            android:value="" />
+        <meta-data
+            android:name="IAGSSecretKey"
+            android:value="" />
     </application>
 
 </manifest>
