@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.widget.Switch
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.example.groundsage_example.RecyclerAdapter.*
@@ -17,6 +18,9 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
 
     private var rows = mutableListOf<TableRow>()
     lateinit var recyclerView: RecyclerView
+
+    @SuppressLint("UseSwitchCompatOrMaterialCode")
+    private lateinit var subscriptionSwitch: Switch
     lateinit var adapter: RecyclerAdapter
 
     @SuppressLint("WrongConstant")
@@ -24,9 +28,21 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         recyclerView = findViewById<RecyclerView>(R.id.densityListView)
-
+        subscriptionSwitch = findViewById<Switch>(R.id.subscriptionSwitch)
+        subscriptionSwitch.setOnClickListener {
+            if (subscriptionSwitch.isChecked) {
+                Venue.getVenue()?.let {
+                    IAGSManager.getInstance(this).startSubscription(it.id)
+                }
+            } else {
+                Venue.getVenue()?.let {
+                    IAGSManager.getInstance(this).stopSubscription(it.id)
+                }
+            }
+        }
         IAGSManager.getInstance(this).requestVenueInfo { venues, error ->
             if (venues != null) {
+                subscriptionSwitch.isEnabled = true
                 Venue.setVenue(venues[0])
                 val areaThreshold = String.format(
                     "Closed Area Threshold: %d",
@@ -51,12 +67,9 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
                         rows.add(AreaRow(it[i - 1], null))
                     }
                 }
-                Handler(Looper.getMainLooper()).post {
-                    adapter = RecyclerAdapter(rows, this)
-                    recyclerView.adapter = adapter
-                    IAGSManager.getInstance(this).addGroundSageListener(this)
-                    IAGSManager.getInstance(this).startSubscription(venues[0].id)
-                }
+                adapter = RecyclerAdapter(rows, this)
+                recyclerView.adapter = adapter
+                IAGSManager.getInstance(this).addGroundSageListener(this)
             }
             if (error != null) {
                 print("error %d \n" + error.message)
@@ -75,17 +88,15 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
         Log.d("MainActivity", "didReceiveDensity")
         //update density status
         venueDensity.area?.let {
-            for (i in 1 .. it.size){
+            for (i in 1..it.size) {
                 var item = rows.first { row ->
-                    row is AreaRow && row.areaProperty.id == it[i-1].id
+                    row is AreaRow && row.areaProperty.id == it[i - 1].id
                 }
                 var area = item as AreaRow
-                area.densityProperty = it[i-1].densityProperty
+                area.densityProperty = it[i - 1].densityProperty
             }
             Venue.setAreaList(rows)
-            Handler(Looper.getMainLooper()).post {
-                adapter.notifyDataSetChanged()
-            }
+            adapter.notifyDataSetChanged()
         }
     }
 

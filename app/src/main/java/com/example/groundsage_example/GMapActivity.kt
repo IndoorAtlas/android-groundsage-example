@@ -21,7 +21,7 @@ class GMapActivity : AppCompatActivity(),
     private lateinit var gmap: GoogleMap
     private val polygons = mutableListOf<Polygon>()
     private val markers = mutableListOf<MarkerOptions>()
-
+    private lateinit var areaList : List<RecyclerAdapter.AreaRow>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,6 +36,9 @@ class GMapActivity : AppCompatActivity(),
         mapView.onCreate(savedInstanceState)
         mapView.getMapAsync(this)
 
+        val floorValue = intent.getIntExtra("floor", -1)
+        areaList = Venue.getFilteredAreaList(floorValue)
+
         IAGSManager.getInstance(this).addGroundSageListener(this)
         Venue.getVenue()?.id?.let { IAGSManager.getInstance(this).startSubscription(it) }
     }
@@ -47,9 +50,11 @@ class GMapActivity : AppCompatActivity(),
             gmap.uiSettings.isMyLocationButtonEnabled = false
             gmap.uiSettings.isTiltGesturesEnabled = false
             gmap.isBuildingsEnabled = false
-            gmap.setMinZoomPreference(19F)
-            val location = LatLng(22.301292, 114.173967)
-            gmap.moveCamera(CameraUpdateFactory.newLatLng(location))
+            gmap.setMinZoomPreference(14F)
+            areaList[0].areaProperty.geometry?.let {
+                val firstCoord = LatLng(it[0].latitude, it[0].longitude)
+                gmap.moveCamera(CameraUpdateFactory.newLatLng(firstCoord))
+            }
             drawRegions()
             drawLabel()
         }
@@ -63,8 +68,6 @@ class GMapActivity : AppCompatActivity(),
             it.clear()
         }
 
-        val floorValue = intent.getIntExtra("floor", -1)
-        val areaList = Venue.getFilteredAreaList(floorValue)
         for (i in 1..areaList.size) {
             areaList[i - 1].areaProperty.geometry?.let {
                 val rectOptions = PolygonOptions().fillColor(
