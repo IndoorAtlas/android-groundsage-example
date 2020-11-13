@@ -35,4 +35,8 @@ jobs:
       - name: Build the app
         run: |
           ./gradlew clean
-          ./gradlew build
+          ./gradlew build --stacktrace \
+          -PgoogleMapsApiKey=${{secrets.MAP_API_KEY}} \
+          -PiagsApiKey=${{secrets.SITKM_API_KEY}} \
+          -PiagsApiSecret=${{secrets.SITKM_SECRET}} \
+          -PiagsApiEndpoint=${{secrets.CUSTOM_ENDPOINT}}

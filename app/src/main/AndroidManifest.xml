@@ -33,13 +33,16 @@
             android:value="MainActivity" />
         <meta-data
             android:name="com.google.android.maps.v2.API_KEY"
-            android:value="AIzaSyCfJU9P_PL4eqj6WUk_vm0BzkDADgFFM2Y" />
+            android:value="@string/google_maps_api_key" />
+        <meta-data
+            android:name="IAGSCustomEndpoint"
+            android:value="@string/iags_custom_endpoint" />
         <meta-data
             android:name="IAGSApiKey"
-            android:value="" />
+            android:value="@string/iags_api_key" />
         <meta-data
             android:name="IAGSSecretKey"
-            android:value="" />
+            android:value="@string/iags_api_secret" />
     </application>
 
 </manifest>
