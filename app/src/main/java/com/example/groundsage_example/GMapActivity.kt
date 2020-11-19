@@ -51,9 +51,11 @@ class GMapActivity : AppCompatActivity(),
             gmap.uiSettings.isTiltGesturesEnabled = false
             gmap.isBuildingsEnabled = false
             gmap.setMinZoomPreference(14F)
-            areaList[0].areaProperty.geometry?.let {
-                val firstCoord = LatLng(it[0].latitude, it[0].longitude)
-                gmap.moveCamera(CameraUpdateFactory.newLatLng(firstCoord))
+            if (areaList.isNotEmpty()){
+                areaList[0].areaProperty.geometry?.let {
+                    val firstCoord = LatLng(it[0].latitude, it[0].longitude)
+                    gmap.moveCamera(CameraUpdateFactory.newLatLng(firstCoord))
+                }
             }
             drawRegions()
             drawLabel()

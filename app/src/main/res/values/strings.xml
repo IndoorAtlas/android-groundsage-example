@@ -1,4 +1,5 @@
 <resources>
-    <string name="app_name">groundsage-example</string>
+    <string name="app_name">GroundSage example</string>
     <string name="title_activity_g_map">Map</string>
+    <string name="title_activity_splash">SplashActivity</string>
 </resources>
