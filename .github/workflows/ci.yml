@@ -39,4 +39,6 @@ jobs:
           -PgoogleMapsApiKey=${{secrets.MAP_API_KEY}} \
           -PiagsApiKey=${{secrets.SITKM_API_KEY}} \
           -PiagsApiSecret=${{secrets.SITKM_SECRET}} \
-          -PiagsApiEndpoint=${{secrets.CUSTOM_ENDPOINT}}
+          -PiagsApiEndpoint=${{secrets.CUSTOM_ENDPOINT}} \
+          -PbintrayUser=${{secrets.BINTRAY_USER}} \
+          -PbintrayApiKey=${{secrets.BINTRAY_API_KEY}}
