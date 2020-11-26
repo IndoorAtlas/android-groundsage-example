@@ -1,24 +1,29 @@
 package com.example.groundsage_example
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import android.widget.Switch
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import com.example.groundsage_example.RecyclerAdapter.*
 import com.indooratlas.sdk.groundsage.IAGSManager
 import com.indooratlas.sdk.groundsage.IAGSManagerListener
 import com.indooratlas.sdk.groundsage.data.IAGSVenueDensity
+import pub.devrel.easypermissions.EasyPermissions
+import java.text.SimpleDateFormat
+import java.util.*
 
 class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler {
 
     private var rows = mutableListOf<TableRow>()
     lateinit var recyclerView: RecyclerView
-
+    private lateinit var mainLayout: ConstraintLayout
+    private lateinit var lastUpdate:TextView
     @SuppressLint("UseSwitchCompatOrMaterialCode")
     private lateinit var subscriptionSwitch: Switch
     lateinit var adapter: RecyclerAdapter
@@ -29,20 +34,17 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
         setContentView(R.layout.activity_main)
         recyclerView = findViewById<RecyclerView>(R.id.densityListView)
         subscriptionSwitch = findViewById<Switch>(R.id.subscriptionSwitch)
+        lastUpdate = findViewById<TextView>(R.id.lastUpdate)
+        mainLayout = findViewById(R.id.mainLayout)
         subscriptionSwitch.setOnClickListener {
             if (subscriptionSwitch.isChecked) {
-                Venue.getVenue()?.let {
-                    IAGSManager.getInstance(this).startSubscription(it.id)
-                }
+                    IAGSManager.getInstance(this).startSubscription()
             } else {
-                Venue.getVenue()?.let {
-                    IAGSManager.getInstance(this).stopSubscription(it.id)
-                }
+                    IAGSManager.getInstance(this).stopSubscription()
             }
         }
         IAGSManager.getInstance(this).requestVenueInfo { venues, error ->
             if (venues != null) {
-                subscriptionSwitch.isEnabled = true
                 Venue.setVenue(venues[0])
                 val areaThreshold = String.format(
                     "Closed Area Threshold: %d",
@@ -63,13 +65,22 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
                 }
                 rows.add(HeaderRow("Area"))
                 venues[0].areas.let {
+                    val areaList = mutableListOf<RecyclerAdapter.AreaRow>()
                     for (i in 1..it.size) {
                         rows.add(AreaRow(it[i - 1], null))
+                        areaList.add(AreaRow(it[i - 1], null))
                     }
+                    Venue.setAreaList(areaList)
                 }
                 adapter = RecyclerAdapter(rows, this)
                 recyclerView.adapter = adapter
-                IAGSManager.getInstance(this).addGroundSageListener(this)
+
+
+                if (EasyPermissions.hasPermissions(this, Manifest.permission.ACCESS_FINE_LOCATION)){
+                    subscriptionSwitch.isEnabled = true
+                    val locationManager = IAGSManager.getInstance(this)
+                    locationManager.addGroundSageListener(this)
+                }
             }
             if (error != null) {
                 print("error %d \n" + error.message)
@@ -80,8 +91,17 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
     override fun onResume() {
         super.onResume()
         Log.d("MainActivity", "onResume")
-        IAGSManager.getInstance(this).addGroundSageListener(this)
-        Venue.getVenue()?.id?.let { IAGSManager.getInstance(this).startSubscription(it) }
+        if (subscriptionSwitch.isChecked){
+            IAGSManager.getInstance(this).startSubscription()
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (subscriptionSwitch.isChecked) {
+            IAGSManager.getInstance(this).stopSubscription()
+            subscriptionSwitch.isChecked = false
+        }
     }
 
     override fun didReceiveDensity(venueDensity: IAGSVenueDensity) {
@@ -95,13 +115,19 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
                 var area = item as AreaRow
                 area.densityProperty = it[i - 1].densityProperty
             }
+            Venue.clearAreaList()
             Venue.setAreaList(rows)
             adapter.notifyDataSetChanged()
+            val currentDateTime = SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.getDefault()).format(Date())
+            lastUpdate.text = String.format("Last density update: $currentDateTime")
         }
     }
 
     override fun forwardClick(holder: FloorViewHolder) {
         Log.d("MainActivity", holder.floorLevel.text as String)
+        if (subscriptionSwitch.isChecked){
+            IAGSManager.getInstance(this).stopSubscription()
+        }
         val intent = Intent(this, GMapActivity::class.java)
         intent.putExtra("floor", holder.floor)
         startActivity(intent)

@@ -18,6 +18,10 @@ object Venue {
         return areaList
     }
 
+    fun clearAreaList(){
+        areaList.removeAll(areaList)
+    }
+
     fun setAreaList(list: List<RecyclerAdapter.TableRow>){
         val list = list.filterIsInstance<RecyclerAdapter.AreaRow>()
         this.areaList.addAll(list)

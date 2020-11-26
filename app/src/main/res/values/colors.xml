@@ -3,4 +3,10 @@
     <color name="colorPrimary">@android:color/white</color>\
     <color name="colorAccent">#007dff</color>
     <color name="colorSeparationLine">#ededed</color>
+
+    <!--Circle-->
+    <color name="ColorCurrentStrokeCircle">#B35EABF2</color>
+    <color name="ColorCurrentFillCircle">#805EABF2</color>
+    <color name="ColorOtherStrokeCircle">#B34a4a4a</color>
+    <color name="ColorOtherFillCircle">#804a4a4a</color>
 </resources>
