@@ -5,7 +5,9 @@ import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.RelativeLayout
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -33,6 +35,7 @@ class GMapActivity : AppCompatActivity(), OnMapReadyCallback {
     private var locationManager: IAGSManager = IAGSManager.getInstance(this)
     private lateinit var mapView: MapView
     private lateinit var gmap: GoogleMap
+    private var currentFloor = -999
     private var floorValue: Int = -999
     private var mGroundOverlay: GroundOverlay? = null
     private val groundOverlay = GroundOverlayOptions()
@@ -44,6 +47,7 @@ class GMapActivity : AppCompatActivity(), OnMapReadyCallback {
     private var circleOverlay: CircleOptions? = null
     private lateinit var areaList: List<RecyclerAdapter.AreaRow>
     private lateinit var mapLayout: RelativeLayout
+    private lateinit var exitRegionText:TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,6 +55,7 @@ class GMapActivity : AppCompatActivity(), OnMapReadyCallback {
         title = String.format("Floor $floorValue")
         setContentView(R.layout.activity_gmap)
         mapLayout = findViewById(R.id.gmapLayout)
+        exitRegionText = findViewById(R.id.exitRegionMsg)
         val toolbar: Toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
         supportActionBar?.let {
@@ -71,6 +76,11 @@ class GMapActivity : AppCompatActivity(), OnMapReadyCallback {
             gmap.isBuildingsEnabled = false
             drawRegions()
             drawLabel()
+
+            locationManager.startSubscription()
+            locationManager.addGroundSageListener(mGroundSageListener)
+            locationManager.addIARegionListener(mRegionListener)
+            locationManager.addIALocationListener(mLocationListener)
         }
     }
 
@@ -114,10 +124,7 @@ class GMapActivity : AppCompatActivity(), OnMapReadyCallback {
         mapView.onResume()
         super.onResume()
         Log.d("GMapActivity", "onResume")
-        locationManager.startSubscription()
-        locationManager.addGroundSageListener(mGroundSageListener)
-        locationManager.addIARegionListener(mRegionListener)
-        locationManager.addIALocationListener(mLocationListener)
+
     }
 
     override fun onPause() {
@@ -218,6 +225,7 @@ class GMapActivity : AppCompatActivity(), OnMapReadyCallback {
         override fun onEnterRegion(region: IARegion?) {
             Log.d("GMapActivity", "onEnterRegion")
             region?.let {
+                exitRegionText.visibility = View.GONE
                 if (it.type == IARegion.TYPE_FLOOR_PLAN) {
                     Log.d("GMapActivity", "onEnterRegion TYPE_FLOOR_PLAN")
                     val iaLatLng = it.floorPlan.center
@@ -226,6 +234,10 @@ class GMapActivity : AppCompatActivity(), OnMapReadyCallback {
                     gmap.moveCamera(CameraUpdateFactory.newLatLng(center))
                     if (it.floorPlan.floorLevel == floorValue) {
                         fetchFloorPlanBitmap(it.floorPlan)
+                    }
+                } else if(it.type == IARegion.TYPE_VENUE) {
+                    for (floorPlan in it.venue.floorPlans) {
+                        fetchFloorPlanBitmap(floorPlan)
                     }
                 }
             }
@@ -247,11 +259,7 @@ class GMapActivity : AppCompatActivity(), OnMapReadyCallback {
                     polygons.add(polygon)
                 }
             }
-            Snackbar.make(
-                mapLayout,
-                "Leave region",
-                Snackbar.LENGTH_SHORT
-            ).show()
+            exitRegionText.visibility = View.VISIBLE
         }
 
     }
@@ -278,14 +286,17 @@ class GMapActivity : AppCompatActivity(), OnMapReadyCallback {
 
                 } else {
                     //show grey circle and tell user on other floor
-                    locationMarker?.isVisible = false
                     circleOverlay?.fillColor(mapView.context.getColor(R.color.ColorOtherFillCircle))
                     circleOverlay?.strokeColor(mapView.context.getColor(R.color.ColorOtherStrokeCircle))
-                    Snackbar.make(
-                        mapLayout,
-                        "Your current floor is ${it.floorLevel}",
-                        Snackbar.LENGTH_SHORT
-                    ).show()
+                    locationMarker?.isVisible = false
+                    if(currentFloor != it.floorLevel){
+                        currentFloor = it.floorLevel
+                        Snackbar.make(
+                            mapLayout,
+                            "Your current floor is ${it.floorLevel}",
+                            Snackbar.LENGTH_LONG
+                        ).show()
+                    }
                 }
                 circle?.remove()
                 circle = gmap.addCircle(circleOverlay)

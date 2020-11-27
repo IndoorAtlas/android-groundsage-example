@@ -36,13 +36,6 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
         subscriptionSwitch = findViewById<Switch>(R.id.subscriptionSwitch)
         lastUpdate = findViewById<TextView>(R.id.lastUpdate)
         mainLayout = findViewById(R.id.mainLayout)
-        subscriptionSwitch.setOnClickListener {
-            if (subscriptionSwitch.isChecked) {
-                    IAGSManager.getInstance(this).startSubscription()
-            } else {
-                    IAGSManager.getInstance(this).stopSubscription()
-            }
-        }
         IAGSManager.getInstance(this).requestVenueInfo { venues, error ->
             if (venues != null) {
                 Venue.setVenue(venues[0])
@@ -79,7 +72,7 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
                 if (EasyPermissions.hasPermissions(this, Manifest.permission.ACCESS_FINE_LOCATION)){
                     subscriptionSwitch.isEnabled = true
                     val locationManager = IAGSManager.getInstance(this)
-                    locationManager.addGroundSageListener(this)
+
                 }
             }
             if (error != null) {
@@ -91,15 +84,28 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
     override fun onResume() {
         super.onResume()
         Log.d("MainActivity", "onResume")
-        if (subscriptionSwitch.isChecked){
-            IAGSManager.getInstance(this).startSubscription()
+        val groundSageMgr = IAGSManager.getInstance(this)
+        groundSageMgr.requestVenueInfo { _, _ ->
+            Log.d("MainActivity", "onResume requestVenueInfo")
+            groundSageMgr.addGroundSageListener(this)
+            subscriptionSwitch.setOnClickListener {
+                if (subscriptionSwitch.isChecked) {
+                    Log.d("MainActivity", "onResume subscriptionSwitch is Checked")
+                    groundSageMgr.startSubscription()
+                } else {
+                    Log.d("MainActivity", "onResume subscriptionSwitch is not Checked")
+                    groundSageMgr.stopSubscription()
+                }
+            }
         }
     }
 
     override fun onPause() {
         super.onPause()
+        Log.d("MainActivity", "onPause")
         if (subscriptionSwitch.isChecked) {
             IAGSManager.getInstance(this).stopSubscription()
+            IAGSManager.getInstance(this).removeGroundSageListener(this)
             subscriptionSwitch.isChecked = false
         }
     }
@@ -109,10 +115,10 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
         //update density status
         venueDensity.area?.let {
             for (i in 1..it.size) {
-                var item = rows.first { row ->
+                val item = rows.first { row ->
                     row is AreaRow && row.areaProperty.id == it[i - 1].id
                 }
-                var area = item as AreaRow
+                val area = item as AreaRow
                 area.densityProperty = it[i - 1].densityProperty
             }
             Venue.clearAreaList()
@@ -125,9 +131,6 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
 
     override fun forwardClick(holder: FloorViewHolder) {
         Log.d("MainActivity", holder.floorLevel.text as String)
-        if (subscriptionSwitch.isChecked){
-            IAGSManager.getInstance(this).stopSubscription()
-        }
         val intent = Intent(this, GMapActivity::class.java)
         intent.putExtra("floor", holder.floor)
         startActivity(intent)

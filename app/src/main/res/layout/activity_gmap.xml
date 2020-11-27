@@ -32,6 +32,20 @@
         android:layout_below="@+id/appbar"
         android:layout_alignParentBottom="true"
         android:layout_marginTop="0dp"
-        android:layout_marginBottom="0dp" />
+        android:layout_marginBottom="0dp"/>
 
+    <TextView
+        android:id="@+id/exitRegionMsg"
+        android:paddingStart="5dp"
+        android:paddingTop="5dp"
+        android:paddingBottom="5dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/appbar"
+        android:text="Out of venue"
+        android:textColor="@android:color/holo_red_dark"
+        android:textStyle="bold"
+        android:textSize="16dp"
+        android:background="@android:color/black"
+        android:visibility="visible"/>
 </RelativeLayout>
