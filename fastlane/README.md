@@ -21,11 +21,6 @@ or alternatively using `brew install fastlane`
 fastlane android test
 ```
 Runs all the tests
-### android slack_update
-```
-fastlane android slack_update
-```
-update slack
 ### android upload_apk
 ```
 fastlane android upload_apk

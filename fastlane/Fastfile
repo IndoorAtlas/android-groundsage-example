@@ -23,8 +23,17 @@ platform :android do
 
   desc "Upload apk to app center"
   lane :upload_apk do
+    owner_name = "IndoorAtlas"
+    app_name = "GS-example-1"
+    appcenter_api_token = ENV["APPCENTER_API_TOKEN"]
+    versions_old = appcenter_fetch_version_number(
+      api_token: appcenter_api_token,
+      owner_name: owner_name,
+      app_name: app_name
+    )
     increment_version_code(
-      gradle_file_path: “app/build.gradle”
+      app_project_dir: "app",
+      version_code: versions_old["build_number"].to_i + 1
     )
     gradle(
       task: "clean assembleDebug",
@@ -40,24 +49,31 @@ platform :android do
       }
     )
     appcenter_upload(
-      api_token: "#{ENV["APPCENTER_API_TOKEN"]}",
-      owner_name: "IndoorAtlas",
+      api_token: appcenter_api_token,
+      owner_name: owner_name,
       owner_type: "organization",
-      app_name: "GS-example-1",
+      app_name: app_name,
       file: "app/build/outputs/apk/debug/app-debug.apk"
     )
+    versions = appcenter_fetch_version_number(
+      api_token: appcenter_api_token,
+      owner_name: owner_name,
+      app_name: app_name
+    )
+    puts versions
+    link = "https://appcenter.ms/orgs/IndoorAtlas/apps/GS-example-1/distribute/releases/#{versions['id']}"
     slack(
-      message: "GroundSage example app uploaded to app center.",
+      message: "GroundSage Android example app #{versions['version']} (#{versions['build_number']}) uploaded to app center.",
       channel: "#alert-app-release",
       slack_url: "#{ENV["SLACK_URL"]}",
       attachment_properties: {
-        image_url: "https://chart.googleapis.com/chart?cht=qr&chl=https://install.appcenter.ms/orgs/IndoorAtlas/apps/GS-example-1=UTF-8&chs=240x240",
+        image_url: "https://chart.googleapis.com/chart?cht=qr&chl=#{link}&chs=240x240",
         fields: [
           {
               title: "Download Link",
-              value: "https://install.appcenter.ms/orgs/IndoorAtlas/apps/GS-example-1"
+              value: link
           }
-       ]
+        ]
       },
       success: true
     )
