@@ -9,6 +9,8 @@ android {
     def iagsApiKey = project.properties['iagsApiKey'] ?: ""
     def iagsApiSecret = project.properties['iagsApiSecret'] ?: ""
     def googleMapsApiKey = project.properties['googleMapsApiKey'] ?: "api-key-not-set"
+    def iagsApiEndpoint = project.properties['iagsApiEndpoint'] ?: ""
+    def iacustomEndpoint = project.properties['iacustomEndpoint'] ?: ""
 
     defaultConfig {
         applicationId "com.example.groundsage_example"
@@ -22,6 +24,8 @@ android {
         resValue "string", "iags_api_key", iagsApiKey
         resValue "string", "iags_api_secret", iagsApiSecret.replaceAll("%", "\\\\u0025")
         resValue "string", "google_maps_api_key", googleMapsApiKey
+        resValue "string", "iags_custom_endpoint", iagsApiEndpoint
+        resValue "string", "ia_custom_endpoint", iacustomEndpoint
     }
 
     buildTypes {

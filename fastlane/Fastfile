@@ -1,0 +1,65 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+#
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+default_platform(:android)
+
+platform :android do
+  desc "Runs all the tests"
+  lane :test do
+    gradle(task: "test")
+  end
+
+  desc "Upload apk to app center"
+  lane :upload_apk do
+    increment_version_code(
+      gradle_file_path: “app/build.gradle”
+    )
+    gradle(
+      task: "clean assembleDebug",
+      flags: "--stacktrace",
+      properties: {
+        "bintrayUser": "#{ENV["BINTRAY_USER"]}",
+        "bintrayApiKey": "#{ENV["BINTRAY_API_KEY"]}",
+        "googleMapsApiKey": "#{ENV["MAP_API_KEY"]}",
+        "iagsApiKey": "#{ENV["SITCP_API_KEY"]}",
+        "iagsApiSecret": "#{ENV["SITCP_SECRET"]}",
+        "iagsApiEndpoint": "#{ENV["IAGS_CUSTOM_ENDPOINT"]}",
+        "iacustomEndpoint": "#{ENV["IA_CUSTOM_ENDPOINT"]}"
+      }
+    )
+    appcenter_upload(
+      api_token: "#{ENV["APPCENTER_API_TOKEN"]}",
+      owner_name: "IndoorAtlas",
+      owner_type: "organization",
+      app_name: "GS-example-1",
+      file: "app/build/outputs/apk/debug/app-debug.apk"
+    )
+    slack(
+      message: "GroundSage example app uploaded to app center.",
+      channel: "#alert-app-release",
+      slack_url: "#{ENV["SLACK_URL"]}",
+      attachment_properties: {
+        image_url: "https://chart.googleapis.com/chart?cht=qr&chl=https://install.appcenter.ms/orgs/IndoorAtlas/apps/GS-example-1=UTF-8&chs=240x240",
+        fields: [
+          {
+              title: "Download Link",
+              value: "https://install.appcenter.ms/orgs/IndoorAtlas/apps/GS-example-1"
+          }
+       ]
+      },
+      success: true
+    )
+  end
+end
