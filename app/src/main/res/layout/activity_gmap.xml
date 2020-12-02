@@ -1,51 +1,75 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:id="@+id/gmapLayout"
-    tools:context=".GMapActivity">
-
-    <com.google.android.material.appbar.AppBarLayout
-        android:id="@+id/appbar"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <data>
+        <import type="android.view.View"/>
+        <variable
+            name="networkViewModel"
+            type="com.example.groundsage_example.NetworkViewModel" />
+    </data>
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:theme="@style/AppTheme.AppBarOverlay"
-        tools:ignore="MissingClass">
-        <androidx.appcompat.widget.Toolbar
-            android:id="@+id/toolbar"
+        android:layout_height="match_parent"
+        android:id="@+id/gmapLayout"
+        tools:context=".GMapActivity">
+
+        <com.google.android.material.appbar.AppBarLayout
+            android:id="@+id/appbar"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:background="?attr/colorPrimary"
-            app:titleTextColor="?attr/colorAccent"
-            app:iconTint="?attr/colorAccent"
-            android:theme="@style/AppTheme.NoActionBar"
-            app:popupTheme="@style/AppTheme.PopupOverlay"
-            app:layout_scrollFlags="scroll|exitUntilCollapsed" />
-    </com.google.android.material.appbar.AppBarLayout>
+            android:layout_height="wrap_content"
+            android:theme="@style/AppTheme.AppBarOverlay"
+            tools:ignore="MissingClass">
+            <androidx.appcompat.widget.Toolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                android:background="?attr/colorPrimary"
+                app:titleTextColor="?attr/colorAccent"
+                app:iconTint="?attr/colorAccent"
+                android:theme="@style/AppTheme.NoActionBar"
+                app:popupTheme="@style/AppTheme.PopupOverlay"
+                app:layout_scrollFlags="scroll|exitUntilCollapsed" />
+        </com.google.android.material.appbar.AppBarLayout>
 
-    <com.google.android.gms.maps.MapView
-        android:id="@+id/gmap"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/appbar"
-        android:layout_alignParentBottom="true"
-        android:layout_marginTop="0dp"
-        android:layout_marginBottom="0dp"/>
+        <com.google.android.gms.maps.MapView
+            android:id="@+id/gmap"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/appbar"
+            android:layout_alignParentBottom="true"
+            android:layout_marginTop="0dp"
+            android:layout_marginBottom="0dp"/>
 
-    <TextView
-        android:id="@+id/exitRegionMsg"
-        android:paddingStart="5dp"
-        android:paddingTop="5dp"
-        android:paddingBottom="5dp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/appbar"
-        android:text="Out of venue"
-        android:textColor="@android:color/holo_red_dark"
-        android:textStyle="bold"
-        android:textSize="16dp"
-        android:background="@android:color/black"
-        android:visibility="visible"/>
-</RelativeLayout>
+        <TextView
+            android:id="@+id/exitRegionMsg"
+            android:paddingStart="5dp"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/appbar"
+            android:text="Out of venue"
+            android:textColor="@android:color/holo_red_dark"
+            android:textStyle="bold"
+            android:textSize="16dp"
+            android:background="@android:color/black"
+            android:visibility="visible"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/appbar"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
+            android:text="No network"
+            android:textAlignment="center"
+            android:textColor="@android:color/holo_red_dark"
+            android:background="@android:color/black"
+            android:textSize="16dp"
+            android:textStyle="bold"
+            android:visibility="@{networkViewModel.networkAvailable? View.GONE : View.VISIBLE}"
+            />
+    </RelativeLayout>
+</layout>
+

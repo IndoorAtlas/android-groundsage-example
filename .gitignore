@@ -7,14 +7,18 @@
 /.idea/workspace.xml
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
+/.idea/tasks.xml
+/.idea/gradle.xml
+/.idea/dictionaries
 .DS_Store
 /build
 /captures
 .externalNativeBuild
 .cxx
+/vendor
 
 # fastlane specific
-**/fastlane/report.xml
+/fastlane/report.xml
 
 # deliver temporary files
 **/fastlane/Preview.html
@@ -24,3 +28,5 @@
 
 # scan temporary files
 **/fastlane/test_output
+
+

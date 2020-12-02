@@ -1,66 +1,101 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:id="@+id/mainLayout"
-    tools:context=".MainActivity">
-
-    <RelativeLayout
-        android:id="@+id/serviceSubscription"
+    xmlns:tools="http://schemas.android.com/tools">
+    <data>
+        <import type="android.view.View"/>
+        <variable
+            name="networkViewModel"
+            type="com.example.groundsage_example.NetworkViewModel" />
+    </data>
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="5dp"
-        android:layout_marginBottom="5dp"
-        android:layout_marginStart="10dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/densityListView">
+        android:layout_height="match_parent"
+        android:id="@+id/mainLayout"
+        tools:context=".MainActivity">
+
+        <RelativeLayout
+            android:id="@+id/serviceSubscription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:layout_marginBottom="5dp"
+            android:layout_marginStart="10dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toTopOf="@+id/traceIDText">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:layout_marginEnd="0dp"
+                android:layout_toStartOf="@+id/subscriptionSwitch"
+                android:text="Service Subscription" />
+
+            <Switch
+                android:id="@+id/subscriptionSwitch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:checked="false"
+                android:enabled="@{networkViewModel.networkAvailable}"
+                tools:ignore="UseSwitchCompatOrMaterialXml" />
+
+        </RelativeLayout>
 
         <TextView
-            android:layout_width="wrap_content"
+            android:id="@+id/traceIDText"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:layout_centerVertical="true"
-            android:layout_marginEnd="0dp"
-            android:layout_toStartOf="@+id/subscriptionSwitch"
-            android:text="Service Subscription" />
+            android:layout_marginBottom="5dp"
+            android:layout_marginStart="10dp"
+            app:layout_constraintTop_toBottomOf="@+id/serviceSubscription"
+            app:layout_constraintBottom_toTopOf="@+id/densityListView"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="Trace ID: " />
 
-        <Switch
-            android:id="@+id/subscriptionSwitch"
-            android:layout_width="wrap_content"
+        <TextView
+            android:id="@+id/lastUpdate"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            android:checked="false"
-            android:enabled="false"
-            tools:ignore="UseSwitchCompatOrMaterialXml" />
+            android:layout_marginTop="5dp"
+            android:layout_marginStart="5dp"
+            android:text="Last density update: NA"
+            app:layout_constraintTop_toBottomOf="@+id/densityListView"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
 
-    </RelativeLayout>
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/densityListView"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-        android:scrollbars="vertical"
-        app:layout_constraintTop_toBottomOf="@+id/serviceSubscription"
-        app:layout_constraintBottom_toTopOf="@+id/lastUpdate"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/densityListView"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            android:scrollbars="vertical"
+            app:layout_constraintTop_toBottomOf="@+id/traceIDText"
+            app:layout_constraintBottom_toTopOf="@+id/lastUpdate"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
 
-    <TextView
-        android:id="@+id/lastUpdate"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="5dp"
-        android:layout_marginStart="5dp"
-        android:text="Last density update: NA"
-        android:gravity=""
-        app:layout_constraintTop_toBottomOf="@+id/densityListView"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"/>
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
+            android:text="No network"
+            android:textAlignment="center"
+            android:textColor="@android:color/holo_red_dark"
+            android:background="@android:color/black"
+            android:textSize="16dp"
+            android:textStyle="bold"
+            android:visibility="@{networkViewModel.networkAvailable? View.GONE : View.VISIBLE}"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

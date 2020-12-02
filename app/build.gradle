@@ -35,6 +35,10 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+    buildFeatures {
+        viewBinding true
+        dataBinding true
+    }
 }
 
 dependencies {
@@ -56,6 +60,8 @@ dependencies {
     implementation 'pub.devrel:easypermissions:2.0.1'
 
     implementation 'com.squareup.picasso:picasso:2.71828'
+
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.2.0'
 
     testImplementation 'junit:junit:4.13.1'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'

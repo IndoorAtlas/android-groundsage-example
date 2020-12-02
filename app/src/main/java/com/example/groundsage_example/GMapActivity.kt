@@ -1,8 +1,10 @@
 package com.example.groundsage_example
 
+import android.content.IntentFilter
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.Drawable
+import android.net.ConnectivityManager
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -10,6 +12,9 @@ import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.databinding.DataBindingUtil
+import androidx.lifecycle.ViewModelProvider
+import com.example.groundsage_example.databinding.ActivityGmapBinding
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
@@ -26,13 +31,14 @@ import com.indooratlas.sdk.groundsage.IAGSManagerListener
 import com.indooratlas.sdk.groundsage.data.IAGSVenueDensity
 import com.squareup.picasso.Picasso
 import com.squareup.picasso.Target
-import java.lang.Exception
 import java.text.SimpleDateFormat
 import java.util.*
 
 class GMapActivity : AppCompatActivity(), OnMapReadyCallback {
 
-    private var locationManager: IAGSManager = IAGSManager.getInstance(this)
+    private lateinit var networkViewModel: NetworkViewModel
+    private lateinit var binding: ActivityGmapBinding
+    private var groundSageMgr: IAGSManager = IAGSManager.getInstance(this)
     private lateinit var mapView: MapView
     private lateinit var gmap: GoogleMap
     private var currentFloor = -999
@@ -51,9 +57,15 @@ class GMapActivity : AppCompatActivity(), OnMapReadyCallback {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         floorValue = intent.getIntExtra("floor", -1)
         title = String.format("Floor $floorValue")
         setContentView(R.layout.activity_gmap)
+        networkViewModel = ViewModelProvider(this).get(NetworkViewModel::class.java)
+        binding = DataBindingUtil.setContentView<ActivityGmapBinding>(this, R.layout.activity_gmap)
+        binding.networkViewModel = networkViewModel
+        binding.lifecycleOwner = this
+
         mapLayout = findViewById(R.id.gmapLayout)
         exitRegionText = findViewById(R.id.exitRegionMsg)
         val toolbar: Toolbar = findViewById(R.id.toolbar)
@@ -77,10 +89,10 @@ class GMapActivity : AppCompatActivity(), OnMapReadyCallback {
             drawRegions()
             drawLabel()
 
-            locationManager.startSubscription()
-            locationManager.addGroundSageListener(mGroundSageListener)
-            locationManager.addIARegionListener(mRegionListener)
-            locationManager.addIALocationListener(mLocationListener)
+            groundSageMgr.startSubscription()
+            groundSageMgr.addGroundSageListener(mGroundSageListener)
+            groundSageMgr.addIARegionListener(mRegionListener)
+            groundSageMgr.addIALocationListener(mLocationListener)
         }
     }
 
@@ -124,6 +136,11 @@ class GMapActivity : AppCompatActivity(), OnMapReadyCallback {
         mapView.onResume()
         super.onResume()
         Log.d("GMapActivity", "onResume")
+        binding.networkViewModel?.networkChangeReceiver.let {
+            val broadcastIntent = IntentFilter()
+            broadcastIntent.addAction(ConnectivityManager.CONNECTIVITY_ACTION)
+            registerReceiver(it, broadcastIntent)
+        }
 
     }
 
@@ -131,20 +148,24 @@ class GMapActivity : AppCompatActivity(), OnMapReadyCallback {
         mapView.onPause()
         super.onPause()
         Log.d("GMapActivity", "onPause")
-        locationManager.stopSubscription()
-        locationManager.removeGroundSageListener(mGroundSageListener)
-        locationManager.removeIARegionListener(mRegionListener)
-        locationManager.removeIALocationListener(mLocationListener)
+        groundSageMgr.stopSubscription()
+        groundSageMgr.removeGroundSageListener(mGroundSageListener)
+        groundSageMgr.removeIARegionListener(mRegionListener)
+        groundSageMgr.removeIALocationListener(mLocationListener)
     }
 
     override fun onDestroy() {
         super.onDestroy()
         mapView.onDestroy()
+        binding.networkViewModel?.networkChangeReceiver.let {
+            unregisterReceiver(it)
+        }
     }
 
     override fun onLowMemory() {
         super.onLowMemory()
         mapView.onLowMemory()
+
     }
 
     override fun onSupportNavigateUp(): Boolean {
