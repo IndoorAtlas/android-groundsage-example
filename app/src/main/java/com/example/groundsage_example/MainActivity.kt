@@ -11,6 +11,7 @@ import android.widget.Switch
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
@@ -55,9 +56,18 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
                 requestVenueInfo()
             }
         })
+        startForegroundService()
     }
 
-    fun requestVenueInfo(){
+    private fun getForegroundServiceIntent():Intent{
+        return Intent(this, ForegroundService::class.java)
+    }
+
+    private fun startForegroundService(){
+        ContextCompat.startForegroundService(this, getForegroundServiceIntent())
+    }
+
+    private fun requestVenueInfo(){
         IAGSManager.getInstance(this).requestVenueInfo { venues, error ->
             if (venues != null && rows.size == 0) {
                 Venue.setVenue(venues[0])
@@ -80,7 +90,7 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
                 }
                 rows.add(HeaderRow("Area"))
                 venues[0].areas.let {
-                    val areaList = mutableListOf<RecyclerAdapter.AreaRow>()
+                    val areaList = mutableListOf<AreaRow>()
                     for (i in 1..it.size) {
                         rows.add(AreaRow(it[i - 1], null))
                         areaList.add(AreaRow(it[i - 1], null))
@@ -89,7 +99,6 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
                 }
                 adapter = RecyclerAdapter(rows, this)
                 recyclerView.adapter = adapter
-
 
                 if (EasyPermissions.hasPermissions(this, Manifest.permission.ACCESS_FINE_LOCATION)){
                     subscriptionSwitch.isEnabled = true
@@ -110,17 +119,12 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
             registerReceiver(it, broadcastIntent)
         }
         val groundSageMgr = IAGSManager.getInstance(this)
-        groundSageMgr.requestVenueInfo { _, _ ->
-            Log.d("MainActivity", "onResume requestVenueInfo")
-            groundSageMgr.addGroundSageListener(this)
-            subscriptionSwitch.setOnClickListener {
-                if (subscriptionSwitch.isChecked) {
-                    Log.d("MainActivity", "onResume subscriptionSwitch is Checked")
-                    groundSageMgr.startSubscription()
-                } else {
-                    Log.d("MainActivity", "onResume subscriptionSwitch is not Checked")
-                    groundSageMgr.stopSubscription()
-                }
+        groundSageMgr.addGroundSageListener(this)
+        subscriptionSwitch.setOnClickListener {
+            if (subscriptionSwitch.isChecked) {
+                groundSageMgr.startSubscription()
+            } else {
+                groundSageMgr.stopSubscription()
             }
         }
     }
@@ -128,12 +132,6 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
     override fun onPause() {
         super.onPause()
         Log.d("MainActivity", "onPause")
-
-        if (subscriptionSwitch.isChecked) {
-            IAGSManager.getInstance(this).stopSubscription()
-            IAGSManager.getInstance(this).removeGroundSageListener(this)
-            subscriptionSwitch.isChecked = false
-        }
     }
 
     override fun onDestroy() {

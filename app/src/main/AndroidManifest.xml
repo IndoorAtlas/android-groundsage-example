@@ -7,6 +7,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="com.example.permission.MAPS_RECEIVE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
 
     <permission
         android:name="com.example.permission.MAPS_RECEIVE"
@@ -19,6 +20,14 @@
         android:roundIcon="@drawable/ic_app_logo"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+
+        <service
+            android:name="com.example.groundsage_example.ForegroundService"
+            android:icon="@drawable/ic_app_logo"
+            android:foregroundServiceType="location"
+            android:enabled="true"
+            android:exported="false">
+        </service>
 
         <activity
             android:name=".SplashActivity"
