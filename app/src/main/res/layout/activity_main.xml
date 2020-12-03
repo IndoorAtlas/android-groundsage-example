@@ -14,6 +14,46 @@
         android:id="@+id/mainLayout"
         tools:context=".MainActivity">
 
+        <com.google.android.material.appbar.AppBarLayout
+            android:id="@+id/appbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/white"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toTopOf="@+id/serviceSubscription">
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+                <Button
+                    android:id="@+id/backButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:stateListAnimator="@null"
+                    android:elevation="0dp"
+                    android:layout_centerVertical="true"
+                    android:background="@android:color/white"
+                    android:text="Back"
+                    android:textColor="@android:color/darker_gray"
+                    android:visibility="@{networkViewModel.showMapView? View.VISIBLE: View.GONE}"
+                    android:onClick="@{() -> networkViewModel.hideMapView()}"/>
+                <TextView
+                    android:id="@+id/activityTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingTop="10dp"
+                    android:paddingBottom="10dp"
+                    android:text="@{networkViewModel.activityTitle}"
+                    android:textSize="18dp"
+                    android:textStyle="bold"
+                    android:textColor="@color/colorAccent"
+                    android:gravity="center"
+                    android:layout_centerVertical="true"/>
+            </RelativeLayout>
+
+        </com.google.android.material.appbar.AppBarLayout>
+
         <RelativeLayout
             android:id="@+id/serviceSubscription"
             android:layout_width="match_parent"
@@ -21,10 +61,10 @@
             android:layout_marginTop="5dp"
             android:layout_marginBottom="5dp"
             android:layout_marginStart="10dp"
-            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/appbar"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toTopOf="@+id/traceIDText">
+            app:layout_constraintBottom_toTopOf="@+id/densityListView">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -48,24 +88,12 @@
         </RelativeLayout>
 
         <TextView
-            android:id="@+id/traceIDText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="5dp"
-            android:layout_marginStart="10dp"
-            app:layout_constraintTop_toBottomOf="@+id/serviceSubscription"
-            app:layout_constraintBottom_toTopOf="@+id/densityListView"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:text="Trace ID: " />
-
-        <TextView
             android:id="@+id/lastUpdate"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="5dp"
             android:layout_marginStart="5dp"
-            android:text="Last density update: NA"
+            android:text="@{networkViewModel.lastUpdateDate}"
             app:layout_constraintTop_toBottomOf="@+id/densityListView"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
@@ -77,25 +105,55 @@
             android:layout_height="0dp"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
             android:scrollbars="vertical"
-            app:layout_constraintTop_toBottomOf="@+id/traceIDText"
+            app:layout_constraintTop_toBottomOf="@+id/serviceSubscription"
             app:layout_constraintBottom_toTopOf="@+id/lastUpdate"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
-        <TextView
+        <FrameLayout
+            android:id="@+id/frameLayout"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingTop="5dp"
-            android:paddingBottom="5dp"
+            android:layout_height="0dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/serviceSubscription"
+            app:layout_constraintBottom_toTopOf="@+id/lastUpdate"
+            android:visibility="@{networkViewModel.showMapView? View.VISIBLE : View.GONE}"
+            tools:visibility="gone"/>
+
+        <TextView
+            style="@style/Warning_message"
+            android:text="Bluetooth disabled"
+            android:visibility="@{networkViewModel.bluetoothAvailable? View.GONE : View.VISIBLE}"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/appbar"/>
+
+        <TextView
+            style="@style/Warning_message"
+            android:text="Location permission denied"
+            android:visibility="@{networkViewModel.locationPermissionGranted? View.GONE : View.VISIBLE}"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/appbar"/>
+
+        <TextView
+            style="@style/Warning_message"
+            android:text="Location disabled"
+            android:visibility="@{networkViewModel.locationServiceAvailable? View.GONE : View.VISIBLE}"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/appbar"
+            tools:visibility="gone"/>
+
+        <TextView
+            style="@style/Warning_message"
             android:text="No network"
-            android:textAlignment="center"
-            android:textColor="@android:color/holo_red_dark"
-            android:background="@android:color/black"
-            android:textSize="16dp"
-            android:textStyle="bold"
             android:visibility="@{networkViewModel.networkAvailable? View.GONE : View.VISIBLE}"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"/>
+            app:layout_constraintTop_toBottomOf="@+id/appbar"
+            tools:visibility="gone"/>
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

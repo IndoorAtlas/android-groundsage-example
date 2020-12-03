@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="com.example.permission.MAPS_RECEIVE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.​BLUETOOTH" />
 
     <permission
         android:name="com.example.permission.MAPS_RECEIVE"
@@ -19,7 +20,8 @@
         android:label="@string/app_name"
         android:roundIcon="@drawable/ic_app_logo"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme">
+        android:theme="@style/AppTheme.NoActionBar">
+
 
         <service
             android:name="com.example.groundsage_example.ForegroundService"
@@ -31,8 +33,7 @@
 
         <activity
             android:name=".SplashActivity"
-            android:label="@string/app_name"
-            android:theme="@style/AppTheme.NoActionBar">
+            android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -40,12 +41,7 @@
         </activity>
 
         <activity android:name=".MainActivity"
-            android:label="@string/app_name" />
-
-        <activity
-            android:name=".GMapActivity"
-            android:label="@string/title_activity_g_map"
-            android:theme="@style/AppTheme.NoActionBar" />
+            android:label="@string/app_name"/>
 
         <meta-data
             android:name="android.support.PARENT_ACTIVITY"

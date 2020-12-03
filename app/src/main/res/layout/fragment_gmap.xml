@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+    <data>
+        <import type="android.view.View"/>
+        <variable
+            name="networkViewModel"
+            type="com.example.groundsage_example.NetworkViewModel" />
+    </data>
+    <FrameLayout
+        android:id="@+id/fragmentLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".GmapFragment">
+
+        <com.google.android.gms.maps.MapView
+            android:id="@+id/gmap"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="0dp"
+            android:layout_marginBottom="0dp" />
+
+        <TextView
+            style="@style/Warning_message"
+            android:id="@+id/exitRegionMsg"
+            android:text="Out of venue"
+            android:visibility="@{networkViewModel.exitRegionMsg? View.VISIBLE : View.GONE}"/>
+    </FrameLayout>
+</layout>
