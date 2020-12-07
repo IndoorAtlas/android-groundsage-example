@@ -25,6 +25,37 @@
             style="@style/Warning_message"
             android:id="@+id/exitRegionMsg"
             android:text="Out of venue"
-            android:visibility="@{networkViewModel.exitRegionMsg? View.VISIBLE : View.GONE}"/>
+            android:visibility="@{networkViewModel.exitRegionMsg? View.VISIBLE : View.GONE}"
+            tools:visibility="gone"/>
+
+        <Switch
+            android:id="@+id/dynamicGeo"
+            android:text="dynamic geofence"
+            android:layout_gravity="end|bottom"
+            android:layout_marginBottom="60dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:checked="false"
+            tools:ignore="UseSwitchCompatOrMaterialXml" />
+        <Switch
+            android:id="@+id/dynamicGeoOverlap"
+            android:text="dynamic geofence (overlap)"
+            android:layout_marginBottom="30dp"
+            android:layout_gravity="end|bottom"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:checked="false"
+            tools:ignore="UseSwitchCompatOrMaterialXml" />
+        <Switch
+            android:id="@+id/dynamicD1D2"
+            android:text="dynamic geofence (d1d2)"
+            android:layout_gravity="end|bottom"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:checked="false"
+            tools:ignore="UseSwitchCompatOrMaterialXml" />
     </FrameLayout>
 </layout>

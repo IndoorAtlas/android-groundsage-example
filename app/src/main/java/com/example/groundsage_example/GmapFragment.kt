@@ -1,5 +1,6 @@
 package com.example.groundsage_example
 
+import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.Drawable
@@ -9,6 +10,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.Switch
 import android.widget.TextView
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
@@ -20,10 +22,7 @@ import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.*
 import com.google.android.material.snackbar.Snackbar
-import com.indooratlas.android.sdk.IALocation
-import com.indooratlas.android.sdk.IALocationListener
-import com.indooratlas.android.sdk.IALocationManager
-import com.indooratlas.android.sdk.IARegion
+import com.indooratlas.android.sdk.*
 import com.indooratlas.android.sdk.resources.IAFloorPlan
 import com.indooratlas.sdk.groundsage.IAGSManager
 import com.indooratlas.sdk.groundsage.IAGSManagerListener
@@ -50,10 +49,16 @@ class GmapFragment : Fragment(), OnMapReadyCallback, IAGSManagerListener, IARegi
     private var circle: Circle? = null
     private var circleOverlay: CircleOptions? = null
 
+    private val mDynamicPolygons = mutableListOf<Polygon>()
+    private val mDynamicPolygonsOverlap = mutableListOf<Polygon>()
+    private val mDynamicPolygonsD1D2 = mutableListOf<Polygon>()
+
     private lateinit var areaList: List<RecyclerAdapter.AreaRow>
     private lateinit var mapLayout: FrameLayout
     private lateinit var exitRegionText: TextView
-
+    private lateinit var dynamicGeo: Switch
+    private lateinit var dynamicGeoOverlap: Switch
+    private lateinit var dynamicGeoD1D2: Switch
     private lateinit var networkViewModel: NetworkViewModel
     private lateinit var binding: FragmentGmapBinding
 
@@ -61,7 +66,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, IAGSManagerListener, IARegi
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        binding = DataBindingUtil.inflate(inflater, R.layout.fragment_gmap, container,false)
+        binding = DataBindingUtil.inflate(inflater, R.layout.fragment_gmap, container, false)
         activity?.let {
             networkViewModel = ViewModelProvider(it).get(NetworkViewModel::class.java)
         }
@@ -70,6 +75,9 @@ class GmapFragment : Fragment(), OnMapReadyCallback, IAGSManagerListener, IARegi
         binding.lifecycleOwner = this
         mapLayout = binding.root.findViewById(R.id.fragmentLayout)
         exitRegionText = binding.root.findViewById(R.id.exitRegionMsg)
+        dynamicGeo = binding.root.findViewById(R.id.dynamicGeo)
+        dynamicGeoOverlap = binding.root.findViewById(R.id.dynamicGeoOverlap)
+        dynamicGeoD1D2 = binding.root.findViewById(R.id.dynamicD1D2)
         mapView = binding.root.findViewById(R.id.gmap)
         mapView.onCreate(savedInstanceState)
         mapView.getMapAsync(this)
@@ -77,8 +85,62 @@ class GmapFragment : Fragment(), OnMapReadyCallback, IAGSManagerListener, IARegi
         return binding.root
     }
 
-    companion object {
 
+    private val geofenceListener = IAGeofenceListener { geofenceEvent ->
+        if (geofenceEvent.getGeofenceTransition() == IAGeofence.GEOFENCE_TRANSITION_ENTER) {
+            geofenceEvent.triggeringGeofences.forEach { geo ->
+                when (geo.id) {
+                    DynamicGeofence.dynamicGeoID -> {
+                        mDynamicPolygons.forEach {
+                            it.strokeColor = Color.BLUE
+                        }
+                    }
+                    DynamicGeofence.dynamicGeoOverlapID -> {
+                        mDynamicPolygonsOverlap.forEach {
+                            it.strokeColor = Color.BLUE
+                        }
+                    }
+                    DynamicGeofence.dynamicGeoD1ID -> {
+                        mDynamicPolygonsD1D2[0].strokeColor = Color.BLUE
+                    }
+                    DynamicGeofence.dynamicGeoD2ID -> {
+                        mDynamicPolygonsD1D2[1].strokeColor = Color.BLUE
+                    }
+                    else -> {
+                        val snackBar =
+                            Snackbar.make(mapLayout, "Enter ${geo.name}", Snackbar.LENGTH_LONG)
+                        snackBar.show()
+                    }
+                }
+            }
+
+        } else {
+            geofenceEvent.triggeringGeofences.forEach { geo ->
+                when (geo.id) {
+                    DynamicGeofence.dynamicGeoID -> {
+                        mDynamicPolygons.forEach {
+                            it.strokeColor = Color.CYAN
+                        }
+                    }
+                    DynamicGeofence.dynamicGeoOverlapID -> {
+                        mDynamicPolygonsOverlap.forEach {
+                            it.strokeColor = Color.MAGENTA
+                        }
+                    }
+                    DynamicGeofence.dynamicGeoD1ID -> {
+                        mDynamicPolygonsD1D2[0].strokeColor = Color.DKGRAY
+                    }
+                    DynamicGeofence.dynamicGeoD2ID -> {
+                        mDynamicPolygonsD1D2[1].strokeColor = Color.DKGRAY
+                    }
+                    else -> {
+                        val snackBar =
+                            Snackbar.make(mapLayout, "Enter ${geo.name}", Snackbar.LENGTH_LONG)
+                        snackBar.show()
+                    }
+                }
+            }
+        }
     }
 
     override fun onMapReady(map: GoogleMap?) {
@@ -86,6 +148,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, IAGSManagerListener, IARegi
         networkViewModel.selectedFloorLevel.value?.let {
             floorValue = it
         }
+
         map?.let {
             gmap = map
             gmap.uiSettings.isMyLocationButtonEnabled = false
@@ -109,8 +172,86 @@ class GmapFragment : Fragment(), OnMapReadyCallback, IAGSManagerListener, IARegi
                 groundSageMgr.addGroundSageListener(this)
                 groundSageMgr.addIARegionListener(this)
                 groundSageMgr.addIALocationListener(this)
+
+            }
+
+            if (floorValue == 19) {
+                initDynamicSwitch()
             }
         }
+    }
+
+    private fun initExtraGeoFence(
+        geoSwitch: Switch,
+        extraGeofence: IAGeofence,
+        polygons: MutableList<Polygon>,
+        color: Int,
+        geofenceID: String
+    ) {
+        geoSwitch.visibility = View.VISIBLE
+        geoSwitch.setOnClickListener {
+            if (geoSwitch.isChecked) {
+                val geofenceRequest =
+                    IAGeofenceRequest.Builder().withCloudGeofences(true).withGeofence(extraGeofence)
+                        .build()
+                groundSageMgr.addGeofences(
+                    geofenceRequest, geofenceListener
+                )
+                drawIARegions(polygons, arrayListOf(extraGeofence), color)
+            } else {
+                groundSageMgr.removeGeofences(arrayListOf(geofenceID))
+                clearIARegions(polygons)
+            }
+        }
+    }
+
+    private fun initExtraGeoFenceList(
+        geoSwitch: Switch,
+        extraGeofencelist: List<IAGeofence>,
+        polygons: MutableList<Polygon>,
+        color: Int,
+        geofenceIDlist: ArrayList<String>
+    ) {
+        geoSwitch.visibility = View.VISIBLE
+        geoSwitch.setOnClickListener {
+            if (geoSwitch.isChecked) {
+                val geofenceRequest =
+                    IAGeofenceRequest.Builder().withCloudGeofences(true)
+                        .withGeofences(extraGeofencelist).build()
+                groundSageMgr.addGeofences(
+                    geofenceRequest, geofenceListener
+                )
+                drawIARegions(polygons, extraGeofencelist, color)
+            } else {
+                groundSageMgr.removeGeofences(geofenceIDlist)
+                clearIARegions(polygons)
+            }
+        }
+    }
+
+    private fun initDynamicSwitch() {
+
+        initExtraGeoFence(
+            dynamicGeo,
+            DynamicGeofence.geofenceDynamic,
+            mDynamicPolygons,
+            Color.CYAN,
+            DynamicGeofence.dynamicGeoID
+        )
+        initExtraGeoFence(
+            dynamicGeoOverlap,
+            DynamicGeofence.geofenceDynamicOverlap,
+            mDynamicPolygonsOverlap,
+            Color.MAGENTA,
+            DynamicGeofence.dynamicGeoOverlapID
+        )
+        initExtraGeoFenceList(
+            dynamicGeoD1D2,
+            arrayListOf(DynamicGeofence.geofenceDynamicD1, DynamicGeofence.geofenceDynamicD2),
+            mDynamicPolygonsD1D2,
+            Color.DKGRAY,
+            arrayListOf(DynamicGeofence.dynamicGeoD1ID, DynamicGeofence.dynamicGeoD2ID)
+        )
     }
 
     override fun onResume() {
@@ -131,6 +272,34 @@ class GmapFragment : Fragment(), OnMapReadyCallback, IAGSManagerListener, IARegi
     override fun onLowMemory() {
         super.onLowMemory()
         mapView.onLowMemory()
+    }
+
+    fun clearIARegions(polygons: MutableList<Polygon>) {
+        polygons.forEach {
+            it.remove()
+        }
+        polygons.clear()
+    }
+
+    fun drawIARegions(
+        polygons: MutableList<Polygon>,
+        geofenceList: List<IAGeofence>,
+        color: Int
+    ) {
+
+        geofenceList.forEach { geo ->
+            val rectOptions = PolygonOptions().fillColor(
+                Color.TRANSPARENT
+            ).strokeColor(
+                color
+            ).strokeWidth(5f)
+
+            geo.edges.forEach { point ->
+                rectOptions.add(LatLng(point[0], point[1]))
+            }
+            val polygon = gmap.addPolygon(rectOptions)
+            polygons.add(polygon)
+        }
     }
 
     private fun drawRegions() {
@@ -164,7 +333,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, IAGSManagerListener, IARegi
     }
 
     private fun drawLabel() {
-        markers.forEach{
+        markers.forEach {
             gmap.addMarker(it)
         }
     }
@@ -289,7 +458,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, IAGSManagerListener, IARegi
                 circleOverlay?.fillColor(mapView.context.getColor(R.color.ColorOtherFillCircle))
                 circleOverlay?.strokeColor(mapView.context.getColor(R.color.ColorOtherStrokeCircle))
                 locationMarker?.isVisible = false
-                if(currentFloor != it.floorLevel){
+                if (currentFloor != it.floorLevel) {
                     currentFloor = it.floorLevel
                     Snackbar.make(
                         mapLayout,
