@@ -30,7 +30,7 @@ class NetworkViewModel : ViewModel() {
     val locationPermissionGranted = MutableLiveData<Boolean>()
     val locationServiceAvailable = MutableLiveData<Boolean>()
     val exitRegionMsg = MutableLiveData<Boolean>()
-
+    val traceID = MutableLiveData<String>().apply { postValue("Trace ID: NA") }
     val lastUpdateDate = MutableLiveData<String>().apply { postValue("Last density update: NA") }
     val selectedFloorLevel = MutableLiveData<Int>()
     val showMapView : LiveData<Boolean> = Transformations.map(selectedFloorLevel) {level ->

@@ -1,6 +1,5 @@
 package com.example.groundsage_example
 
-import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.Drawable
@@ -26,6 +25,7 @@ import com.indooratlas.android.sdk.*
 import com.indooratlas.android.sdk.resources.IAFloorPlan
 import com.indooratlas.sdk.groundsage.IAGSManager
 import com.indooratlas.sdk.groundsage.IAGSManagerListener
+import com.indooratlas.sdk.groundsage.data.IAGSVenue
 import com.indooratlas.sdk.groundsage.data.IAGSVenueDensity
 import com.squareup.picasso.Picasso
 import com.squareup.picasso.Target
@@ -384,12 +384,24 @@ class GmapFragment : Fragment(), OnMapReadyCallback, IAGSManagerListener, IARegi
         })
     }
 
-    override fun didReceiveDensity(venueDensity: IAGSVenueDensity) {
-        Log.d("GmapFragment", "didReceiveDensity")
-        venueDensity.area?.let {
+    override fun onEnterDensityRegion(region: IARegion, venue: IAGSVenue) {
+        val snackBar =
+            Snackbar.make(mapLayout, "Enter density region: ${region.name} venue: ${venue.id}", Snackbar.LENGTH_LONG)
+        snackBar.show()
+    }
+
+    override fun onExitDensityRegion(region: IARegion, venue: IAGSVenue) {
+        val snackBar =
+            Snackbar.make(mapLayout, "Exit density region: ${region.name} venue: ${venue.id}", Snackbar.LENGTH_LONG)
+        snackBar.show()
+    }
+
+    override fun onUpdateDensity(venueDensity: IAGSVenueDensity?) {
+        Log.d("GmapFragment", "onUpdateDensity")
+        venueDensity?.area?.let {
             for (i in 1..it.size) {
                 val item = Venue.getAreaList().first { row ->
-                    row.areaProperty.id == it[i - 1].id
+                    row.areaProperty.id == it[i - 1].areaId
                 }
                 item.densityProperty = it[i - 1].densityProperty
             }

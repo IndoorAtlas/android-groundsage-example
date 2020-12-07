@@ -8,8 +8,10 @@ import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import com.indooratlas.android.sdk.IARegion
 import com.indooratlas.sdk.groundsage.IAGSManager
 import com.indooratlas.sdk.groundsage.IAGSManagerListener
+import com.indooratlas.sdk.groundsage.data.IAGSVenue
 import com.indooratlas.sdk.groundsage.data.IAGSVenueDensity
 
 class ForegroundService : Service(), IAGSManagerListener {
@@ -60,7 +62,15 @@ class ForegroundService : Service(), IAGSManagerListener {
         super.onTaskRemoved(rootIntent)
     }
 
-    override fun didReceiveDensity(venueDensity: IAGSVenueDensity) {
+    override fun onEnterDensityRegion(region: IARegion, venue: IAGSVenue) {
+        Log.d("ForegroundService", "onEnterDensityRegion")
+    }
+
+    override fun onExitDensityRegion(region: IARegion, venue: IAGSVenue) {
+        Log.d("ForegroundService", "onExitDensityRegion")
+    }
+
+    override fun onUpdateDensity(venueDensity: IAGSVenueDensity?) {
         Log.d("ForegroundService", "didReceiveDensity")
     }
 }

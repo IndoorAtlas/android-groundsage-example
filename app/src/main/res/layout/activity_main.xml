@@ -64,7 +64,7 @@
             app:layout_constraintTop_toBottomOf="@+id/appbar"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toTopOf="@+id/densityListView">
+            app:layout_constraintBottom_toTopOf="@+id/traceID">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -88,6 +88,18 @@
         </RelativeLayout>
 
         <TextView
+            android:id="@+id/traceID"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_marginBottom="5dp"
+            android:text="@{networkViewModel.traceID}"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/serviceSubscription"
+            app:layout_constraintBottom_toTopOf="@+id/densityListView"/>
+
+        <TextView
             android:id="@+id/lastUpdate"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -105,7 +117,7 @@
             android:layout_height="0dp"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
             android:scrollbars="vertical"
-            app:layout_constraintTop_toBottomOf="@+id/serviceSubscription"
+            app:layout_constraintTop_toBottomOf="@+id/traceID"
             app:layout_constraintBottom_toTopOf="@+id/lastUpdate"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
@@ -127,7 +139,8 @@
             android:visibility="@{networkViewModel.bluetoothAvailable? View.GONE : View.VISIBLE}"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/appbar"/>
+            app:layout_constraintTop_toBottomOf="@+id/appbar"
+            tools:visibility="gone"/>
 
         <TextView
             style="@style/Warning_message"
@@ -135,7 +148,8 @@
             android:visibility="@{networkViewModel.locationPermissionGranted? View.GONE : View.VISIBLE}"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/appbar"/>
+            app:layout_constraintTop_toBottomOf="@+id/appbar"
+            tools:visibility="gone"/>
 
         <TextView
             style="@style/Warning_message"

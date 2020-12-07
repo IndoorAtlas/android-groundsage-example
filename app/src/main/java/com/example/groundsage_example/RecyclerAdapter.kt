@@ -108,7 +108,7 @@ class RecyclerAdapter(private val rows: List<TableRow>, context: Context) :
 
     private fun onBindFloor(holder: RecyclerView.ViewHolder, row: FloorRow){
         val floorRow = holder as FloorViewHolder
-        floorRow.name.text = row.floor.name
+        floorRow.name.text = row.floor.id
         floorRow.floorLevel.text = String.format("floor level %d", row.floor.floorLevel)
         floorRow.floor = row.floor.floorLevel
     }

@@ -24,6 +24,7 @@ import com.example.groundsage_example.databinding.ActivityMainBinding
 import com.indooratlas.android.sdk.IARegion
 import com.indooratlas.sdk.groundsage.IAGSManager
 import com.indooratlas.sdk.groundsage.IAGSManagerListener
+import com.indooratlas.sdk.groundsage.data.IAGSVenue
 import com.indooratlas.sdk.groundsage.data.IAGSVenueDensity
 import pub.devrel.easypermissions.EasyPermissions
 
@@ -157,14 +158,22 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
         }
     }
 
-    override fun didReceiveDensity(venueDensity: IAGSVenueDensity) {
+    override fun onEnterDensityRegion(region: IARegion, venue: IAGSVenue) {
+        //NA
+    }
+
+    override fun onExitDensityRegion(region: IARegion, venue: IAGSVenue) {
+        //NA
+    }
+
+    override fun onUpdateDensity(venueDensity: IAGSVenueDensity?) {
         Log.d("MainActivity", "didReceiveDensity")
         //update density status
         networkViewModel.updateLastDensityUpdate()
-        venueDensity.area?.let {
+        venueDensity?.area?.let {
             for (i in 1..it.size) {
                 val item = rows.first { row ->
-                    row is AreaRow && row.areaProperty.id == it[i - 1].id
+                    row is AreaRow && row.areaProperty.id == it[i - 1].areaId
                 }
                 val area = item as AreaRow
                 area.densityProperty = it[i - 1].densityProperty
@@ -172,6 +181,10 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
             Venue.clearAreaList()
             Venue.setAreaList(rows)
             adapter.notifyDataSetChanged()
+        }
+        IAGSManager.getInstance(this).extraInfo?.let {
+            val traceId = it.traceId.substring(IntRange(0, it.traceId.indexOf(".") - 1))
+            networkViewModel.traceID.postValue(String.format("Trace ID: $traceId"))
         }
     }
 
