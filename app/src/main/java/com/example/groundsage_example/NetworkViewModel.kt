@@ -6,21 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.location.LocationManager
 import android.net.ConnectivityManager
-import android.os.Bundle
-import android.util.Log
 import androidx.lifecycle.*
-import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.material.snackbar.Snackbar
-import com.indooratlas.android.sdk.IALocation
-import com.indooratlas.android.sdk.IALocationListener
-import com.indooratlas.android.sdk.IALocationManager
 import com.indooratlas.android.sdk.IARegion
-import com.indooratlas.android.sdk.resources.IAFloorPlan
-import com.indooratlas.sdk.groundsage.IAGSManager
-import com.indooratlas.sdk.groundsage.IAGSManagerListener
-import com.indooratlas.sdk.groundsage.data.IAGSVenue
-import com.indooratlas.sdk.groundsage.data.IAGSVenueDensity
 import java.text.SimpleDateFormat
 import java.util.*
 

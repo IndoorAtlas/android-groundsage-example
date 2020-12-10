@@ -22,6 +22,13 @@ allprojects {
             url "https://indooratlas-ltd.bintray.com/mvn-public"
         }
         maven {
+            url "https://indooratlas-ltd.bintray.com/mvn-public-alpha"
+        }
+        maven {
+            url "https://indooratlas-ltd.bintray.com/mvn-public-beta"
+        }
+
+        maven {
             url "https://indooratlas-ltd.bintray.com/mvn-internal-hk"
             credentials {
                 username bintrayUser

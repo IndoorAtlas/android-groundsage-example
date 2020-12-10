@@ -9,6 +9,7 @@ import android.location.LocationManager
 import android.net.ConnectivityManager
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.FrameLayout
 import android.widget.Switch
 import android.widget.TextView
@@ -21,6 +22,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import com.example.groundsage_example.RecyclerAdapter.*
 import com.example.groundsage_example.databinding.ActivityMainBinding
+import com.google.android.material.snackbar.Snackbar
 import com.indooratlas.android.sdk.IARegion
 import com.indooratlas.sdk.groundsage.IAGSManager
 import com.indooratlas.sdk.groundsage.IAGSManagerListener
@@ -36,7 +38,6 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
     private var rows = mutableListOf<TableRow>()
     lateinit var recyclerView: RecyclerView
     private lateinit var frameLayout: FrameLayout
-    private lateinit var mainLayout: ConstraintLayout
     private lateinit var title: TextView
     private lateinit var lastUpdate: TextView
 
@@ -58,13 +59,7 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
         title = findViewById(R.id.activityTitle)
         subscriptionSwitch = findViewById<Switch>(R.id.subscriptionSwitch)
         lastUpdate = findViewById<TextView>(R.id.lastUpdate)
-        mainLayout = findViewById(R.id.mainLayout)
         networkViewModel.selectedFloorLevel.postValue(-999)
-        networkViewModel.networkLiveData.observe(this, androidx.lifecycle.Observer { value ->
-            if (value) {
-                requestVenueInfo()
-            }
-        })
         networkViewModel.initWarningMessageStatus(this)
         networkViewModel.locationPermissionGranted.postValue(
             EasyPermissions.hasPermissions(
@@ -72,6 +67,11 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
                 Manifest.permission.ACCESS_FINE_LOCATION
             )
         )
+        networkViewModel.networkLiveData.observe(this, androidx.lifecycle.Observer { value ->
+            if (value && EasyPermissions.hasPermissions(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+                requestVenueInfo()
+            }
+        })
         startForegroundService()
     }
 
@@ -117,6 +117,8 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
                 recyclerView.adapter = adapter
                 subscriptionSwitch.isEnabled =
                     EasyPermissions.hasPermissions(this, Manifest.permission.ACCESS_FINE_LOCATION)
+            } else {
+                Log.d("MainActivity", "venues is null")
             }
             if (error != null) {
                 print("error %d \n" + error.message)
@@ -159,15 +161,17 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
     }
 
     override fun onEnterDensityRegion(region: IARegion, venue: IAGSVenue) {
-        //NA
+        Log.d("MainActivity", "onEnterDensityRegion")
+        Snackbar.make(frameLayout, "Enter density region ${region.name}", Snackbar.LENGTH_LONG).show()
     }
 
     override fun onExitDensityRegion(region: IARegion, venue: IAGSVenue) {
-        //NA
+        Log.d("MainActivity", "onEnterDensityRegion")
+        Snackbar.make(frameLayout, "Exit density region ${region.name}", Snackbar.LENGTH_LONG).show()
     }
 
     override fun onUpdateDensity(venueDensity: IAGSVenueDensity?) {
-        Log.d("MainActivity", "didReceiveDensity")
+        Log.d("MainActivity", "onUpdateDensity")
         //update density status
         networkViewModel.updateLastDensityUpdate()
         venueDensity?.area?.let {

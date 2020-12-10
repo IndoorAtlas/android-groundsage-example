@@ -31,7 +31,7 @@ import com.squareup.picasso.Picasso
 import com.squareup.picasso.Target
 
 
-class GmapFragment : Fragment(), OnMapReadyCallback, IAGSManagerListener, IARegion.Listener,
+class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListener, IAGSManagerListener, IARegion.Listener,
     IALocationListener {
 
     private lateinit var mapView: MapView
@@ -62,6 +62,11 @@ class GmapFragment : Fragment(), OnMapReadyCallback, IAGSManagerListener, IARegi
     private lateinit var networkViewModel: NetworkViewModel
     private lateinit var binding: FragmentGmapBinding
 
+    private var wayfindingMarker: Marker? = null
+    private var polylines = mutableListOf<Polyline>()
+    private var mWayfindingDestination: IAWayfindingRequest? = null
+    private var mCurrentRoute: IARoute? = null
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -87,7 +92,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, IAGSManagerListener, IARegi
 
 
     private val geofenceListener = IAGeofenceListener { geofenceEvent ->
-        if (geofenceEvent.getGeofenceTransition() == IAGeofence.GEOFENCE_TRANSITION_ENTER) {
+        if (geofenceEvent.geofenceTransition == IAGeofence.GEOFENCE_TRANSITION_ENTER) {
             geofenceEvent.triggeringGeofences.forEach { geo ->
                 when (geo.id) {
                     DynamicGeofence.dynamicGeoID -> {
@@ -106,12 +111,10 @@ class GmapFragment : Fragment(), OnMapReadyCallback, IAGSManagerListener, IARegi
                     DynamicGeofence.dynamicGeoD2ID -> {
                         mDynamicPolygonsD1D2[1].strokeColor = Color.BLUE
                     }
-                    else -> {
-                        val snackBar =
-                            Snackbar.make(mapLayout, "Enter ${geo.name}", Snackbar.LENGTH_LONG)
-                        snackBar.show()
-                    }
                 }
+                val snackBar =
+                    Snackbar.make(mapLayout, "Enter ${geo.name}", Snackbar.LENGTH_LONG)
+                snackBar.show()
             }
 
         } else {
@@ -133,14 +136,121 @@ class GmapFragment : Fragment(), OnMapReadyCallback, IAGSManagerListener, IARegi
                     DynamicGeofence.dynamicGeoD2ID -> {
                         mDynamicPolygonsD1D2[1].strokeColor = Color.DKGRAY
                     }
-                    else -> {
-                        val snackBar =
-                            Snackbar.make(mapLayout, "Enter ${geo.name}", Snackbar.LENGTH_LONG)
-                        snackBar.show()
+                }
+                val snackBar =
+                    Snackbar.make(mapLayout, "Exit ${geo.name}", Snackbar.LENGTH_LONG)
+                snackBar.show()
+            }
+        }
+    }
+
+    private val wayfindingListener = IAWayfindingListener {
+        mCurrentRoute = it
+        if (hasArrivedToDestination(it)) {
+            //stop wayfinding
+            mCurrentRoute = null
+            mWayfindingDestination = null
+            groundSageMgr.removeWayfindingUpdates()
+            Snackbar.make(
+                mapLayout,
+                "You are there~",
+                Snackbar.LENGTH_LONG
+            ).show()
+        }
+        updateRouteVisualization()
+
+    }
+
+    private fun updateRouteVisualization() {
+        polylines.forEach {
+            it.remove()
+        }
+        polylines.clear()
+
+        if (mCurrentRoute == null) {
+            return
+        }
+
+        val polylineOptions = PolylineOptions()
+        mCurrentRoute?.legs?.size?.let { size ->
+            if (size > 0) {
+                mCurrentRoute?.legs?.forEach { leg ->
+                    if (leg.edgeIndex != null) {
+                        polylineOptions.add(LatLng(leg.begin.latitude, leg.begin.longitude))
+                        polylineOptions.add(LatLng(leg.end.latitude, leg.end.longitude))
+                    }
+                    if (leg.begin.floor == floorValue && leg.end.floor == floorValue) {
+                        polylineOptions.color(Color.BLUE)
+                    } else {
+                        polylineOptions.color(Color.GRAY)
+                    }
+                }
+            } else {
+                polylineOptions.color(Color.CYAN)
+                locationMarker?.position?.let {currentPosition ->
+                    mWayfindingDestination?.let { destination ->
+                        polylineOptions.add(currentPosition)
+                        polylineOptions.add(LatLng(destination.latitude, destination.longitude))
                     }
                 }
             }
         }
+
+        polylineOptions.zIndex(95f)
+        polylines.add(gmap.addPolyline(polylineOptions))
+    }
+
+    private fun hasArrivedToDestination(route: IARoute): Boolean {
+        if (route.legs.size == 0) {
+            return false
+        }
+        val FINISH_THRESHOLD_METERS = 8.0
+        var routeLength: Double = 0.0
+        route.legs.forEach {
+            routeLength += it.length
+        }
+        return routeLength < FINISH_THRESHOLD_METERS
+    }
+
+    private fun setWayfindingTarget(point: LatLng, addMarker: Boolean) {
+        mWayfindingDestination =
+            IAWayfindingRequest.Builder().withFloor(floorValue).withLatitude(point.latitude)
+                .withLongitude(point.longitude).build()
+        mWayfindingDestination?.let {
+            groundSageMgr.requestWayfindingUpdates(it, wayfindingListener)
+        }
+
+        if (wayfindingMarker != null) {
+            wayfindingMarker?.remove()
+            wayfindingMarker = null
+        }
+        if (addMarker) {
+            wayfindingMarker = gmap.addMarker(
+                MarkerOptions().position(point)
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
+            )
+            gmap.setOnMarkerClickListener { marker ->
+                if (marker == wayfindingMarker){
+                    mCurrentRoute = null
+                    mWayfindingDestination = null
+                    groundSageMgr.removeWayfindingUpdates()
+                    wayfindingMarker?.remove()
+                    wayfindingMarker = null
+                    updateRouteVisualization()
+                    Snackbar.make(
+                        mapLayout,
+                        "Wayfinding cancel",
+                        Snackbar.LENGTH_LONG
+                    ).show()
+                }
+                false
+            }
+        }
+        Snackbar.make(
+            mapLayout,
+            "Set destination ${mWayfindingDestination?.latitude} ${mWayfindingDestination?.longitude}\nfloor: ${mWayfindingDestination?.floor}",
+            Snackbar.LENGTH_LONG
+        ).show()
     }
 
     override fun onMapReady(map: GoogleMap?) {
@@ -155,12 +265,13 @@ class GmapFragment : Fragment(), OnMapReadyCallback, IAGSManagerListener, IARegi
             gmap.uiSettings.isTiltGesturesEnabled = false
             gmap.isBuildingsEnabled = false
 
+
             networkViewModel.region.value?.let {
                 Log.d("GmapFragment", "onMapReady get region")
                 val iaLatLng = it.floorPlan.center
                 val center = LatLng(iaLatLng.latitude, iaLatLng.longitude)
-                gmap.setMinZoomPreference(22F)
-                gmap.moveCamera(CameraUpdateFactory.newLatLng(center))
+
+                gmap.moveCamera(CameraUpdateFactory.newLatLngZoom(center, 22F))
                 if (it.floorPlan.floorLevel == floorValue) {
                     fetchFloorPlanBitmap(it.floorPlan)
                 }
@@ -178,6 +289,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, IAGSManagerListener, IARegi
             if (floorValue == 19) {
                 initDynamicSwitch()
             }
+            gmap.setOnMapClickListener(this)
         }
     }
 
@@ -191,6 +303,9 @@ class GmapFragment : Fragment(), OnMapReadyCallback, IAGSManagerListener, IARegi
         geoSwitch.visibility = View.VISIBLE
         geoSwitch.setOnClickListener {
             if (geoSwitch.isChecked) {
+                val snackBar =
+                    Snackbar.make(mapLayout, "geoSwitch is checked", Snackbar.LENGTH_LONG)
+                snackBar.show()
                 val geofenceRequest =
                     IAGeofenceRequest.Builder().withCloudGeofences(true).withGeofence(extraGeofence)
                         .build()
@@ -199,6 +314,9 @@ class GmapFragment : Fragment(), OnMapReadyCallback, IAGSManagerListener, IARegi
                 )
                 drawIARegions(polygons, arrayListOf(extraGeofence), color)
             } else {
+                val snackBar =
+                    Snackbar.make(mapLayout, "geoSwitch is checked", Snackbar.LENGTH_LONG)
+                snackBar.show()
                 groundSageMgr.removeGeofences(arrayListOf(geofenceID))
                 clearIARegions(polygons)
             }
@@ -386,13 +504,21 @@ class GmapFragment : Fragment(), OnMapReadyCallback, IAGSManagerListener, IARegi
 
     override fun onEnterDensityRegion(region: IARegion, venue: IAGSVenue) {
         val snackBar =
-            Snackbar.make(mapLayout, "Enter density region: ${region.name} venue: ${venue.id}", Snackbar.LENGTH_LONG)
+            Snackbar.make(
+                mapLayout,
+                "Enter density region: ${region.name} venue: ${venue.id}",
+                Snackbar.LENGTH_LONG
+            )
         snackBar.show()
     }
 
     override fun onExitDensityRegion(region: IARegion, venue: IAGSVenue) {
         val snackBar =
-            Snackbar.make(mapLayout, "Exit density region: ${region.name} venue: ${venue.id}", Snackbar.LENGTH_LONG)
+            Snackbar.make(
+                mapLayout,
+                "Exit density region: ${region.name} venue: ${venue.id}",
+                Snackbar.LENGTH_LONG
+            )
         snackBar.show()
     }
 
@@ -418,8 +544,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, IAGSManagerListener, IARegi
                 Log.d("GmapFragment", "onEnterRegion TYPE_FLOOR_PLAN")
                 val iaLatLng = it.floorPlan.center
                 val center = LatLng(iaLatLng.latitude, iaLatLng.longitude)
-                gmap.setMinZoomPreference(22F)
-                gmap.moveCamera(CameraUpdateFactory.newLatLng(center))
+                gmap.moveCamera(CameraUpdateFactory.newLatLngZoom(center, 22F))
                 if (it.floorPlan.floorLevel == floorValue) {
                     fetchFloorPlanBitmap(it.floorPlan)
                 }
@@ -509,5 +634,13 @@ class GmapFragment : Fragment(), OnMapReadyCallback, IAGSManagerListener, IARegi
             else -> Snackbar.make(mapLayout, "Status unknown status", Snackbar.LENGTH_LONG)
         }
         snackBar.show()
+    }
+
+    override fun onMapClick(point: LatLng?) {
+        point?.let {
+            if (wayfindingMarker == null){
+                setWayfindingTarget(it, true)
+            }
+        }
     }
 }
