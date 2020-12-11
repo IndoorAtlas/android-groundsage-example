@@ -55,12 +55,6 @@
         <meta-data
             android:name="IAGSSecretKey"
             android:value="@string/iags_api_secret" />
-        <meta-data
-            android:name="IAGSCustomEndpoint"
-            android:value="@string/iags_custom_endpoint" />
-        <meta-data
-            android:name="IACustomEndpoint"
-            android:value="@string/ia_custom_endpoint" />
     </application>
 
 </manifest>
