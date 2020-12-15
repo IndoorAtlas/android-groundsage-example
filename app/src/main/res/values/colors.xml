@@ -4,6 +4,12 @@
     <color name="colorAccent">#007dff</color>
     <color name="colorSeparationLine">#ededed</color>
 
+    <color name="colorWarningMsgColor">#B3000000</color>
+
+    <color name="colorExtraGeo">#00f7ff</color>
+    <color name="colorExtraGeoOverlap">#ff80ff</color>
+    <color name="colorExtraGeoD1D2">#FF9900</color>
+
     <!--Circle-->
     <color name="ColorCurrentStrokeCircle">#B35EABF2</color>
     <color name="ColorCurrentFillCircle">#805EABF2</color>

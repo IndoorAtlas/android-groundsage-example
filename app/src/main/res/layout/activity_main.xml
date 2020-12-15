@@ -22,7 +22,7 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toTopOf="@+id/serviceSubscription">
+            app:layout_constraintBottom_toTopOf="@+id/traceID">
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
@@ -61,10 +61,11 @@
             android:layout_marginTop="5dp"
             android:layout_marginBottom="5dp"
             android:layout_marginStart="10dp"
-            app:layout_constraintTop_toBottomOf="@+id/appbar"
-            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/traceID"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toTopOf="@+id/traceID">
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintBottom_toTopOf="@+id/densityListView"
+            >
 
             <TextView
                 android:layout_width="wrap_content"
@@ -91,13 +92,15 @@
             android:id="@+id/traceID"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
             android:layout_marginStart="10dp"
             android:layout_marginBottom="5dp"
             android:text="@{networkViewModel.traceID}"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/serviceSubscription"
-            app:layout_constraintBottom_toTopOf="@+id/densityListView"/>
+            app:layout_constraintTop_toBottomOf="@+id/appbar"
+            app:layout_constraintBottom_toTopOf="@+id/serviceSubscription"
+            />
 
         <TextView
             android:id="@+id/lastUpdate"
@@ -117,7 +120,7 @@
             android:layout_height="0dp"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
             android:scrollbars="vertical"
-            app:layout_constraintTop_toBottomOf="@+id/traceID"
+            app:layout_constraintTop_toBottomOf="@+id/serviceSubscription"
             app:layout_constraintBottom_toTopOf="@+id/lastUpdate"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
