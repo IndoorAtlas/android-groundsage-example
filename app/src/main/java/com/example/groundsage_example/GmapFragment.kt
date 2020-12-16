@@ -43,7 +43,6 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
     private var currentFloor = -999
     private var floorValue: Int = -999
     private var isSameFloor = false
-    private var isFloorPlanShown = false
     private var mGroundOverlay: GroundOverlay? = null
     private val groundOverlay = GroundOverlayOptions()
     private val polygons = mutableListOf<Polygon>()
@@ -94,7 +93,6 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
 
         return binding.root
     }
-
 
     private val geofenceListener = IAGeofenceListener { geofenceEvent ->
         if (geofenceEvent.geofenceTransition == IAGeofence.GEOFENCE_TRANSITION_ENTER) {
@@ -282,7 +280,6 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
             gmap.uiSettings.isTiltGesturesEnabled = false
             gmap.isBuildingsEnabled = false
 
-
             networkViewModel.region.value?.let {
                 Log.d("GmapFragment", "onMapReady get region")
                 val iaLatLng = it.floorPlan.center
@@ -300,7 +297,6 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
                 groundSageMgr.addGroundSageListener(this)
                 groundSageMgr.addIARegionListener(this)
                 groundSageMgr.addIALocationListener(this)
-
             }
 
             if (floorValue == 19) {
@@ -517,7 +513,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
                 bitmap?.let {
                     Log.d("GmapFragment", "onBitmapLoaded")
                     setGroundOverlay(it, floorPlan)
-                    isFloorPlanShown = true
+                    currentFloorPlan = floorPlan
                 } ?: kotlin.run {
                     val snackBar =
                         Snackbar.make(mapLayout, "Load floorPlan failed", Snackbar.LENGTH_LONG)
@@ -576,6 +572,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
         exitRegionText.visibility = View.GONE
         region?.let {
             if (it.type == IARegion.TYPE_FLOOR_PLAN) {
+                networkViewModel.region.postValue(it)
                 isSameFloor = it.floorPlan.floorLevel == floorValue
                 Log.d("GmapFragment", "onEnterRegion TYPE_FLOOR_PLAN")
                 val iaLatLng = it.floorPlan.center
@@ -583,7 +580,6 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
                 gmap.moveCamera(CameraUpdateFactory.newLatLngZoom(center, 22F))
                 if (isSameFloor) {
                     Log.d("GmapFragment","start fetchFloorPlanBitmap")
-                    currentFloorPlan = it.floorPlan
                     fetchFloorPlanBitmap(it.floorPlan)
                 }
             }
@@ -610,10 +606,9 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
     }
 
     override fun onLocationChanged(location: IALocation?) {
-        Log.d("GmapFragment", "onLocationChanged")
-        if (!isFloorPlanShown && isSameFloor) {
+        if (currentFloorPlan == null && isSameFloor) {
             Log.d("GmapFragment","start fetchFloorPlanBitmap")
-            currentFloorPlan?.let { fetchFloorPlanBitmap(it) }
+            networkViewModel.region.value?.let { fetchFloorPlanBitmap(it.floorPlan) }
         }
         location?.let {
             val point = LatLng(it.latitude, it.longitude)

@@ -59,7 +59,14 @@ class ForegroundService : Service(), IAGSManagerListener {
     override fun onTaskRemoved(rootIntent: Intent?) {
         Log.d("ForegroundService", "onTaskRemoved")
         this.stopSelf()
+        IAGSManager.getInstance(this).stopSubscription()
         super.onTaskRemoved(rootIntent)
+    }
+
+    override fun onDestroy() {
+        Log.d("ForegroundService", "onDestroy")
+        IAGSManager.getInstance(this).stopSubscription()
+        super.onDestroy()
     }
 
     override fun onEnterDensityRegion(region: IARegion, venue: IAGSVenue) {

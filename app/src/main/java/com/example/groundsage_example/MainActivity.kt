@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.SharedPreferences
 import android.location.LocationManager
 import android.net.ConnectivityManager
 import android.os.Bundle
@@ -67,11 +68,25 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
                 Manifest.permission.ACCESS_FINE_LOCATION
             )
         )
-        networkViewModel.networkLiveData.observe(this, androidx.lifecycle.Observer { value ->
-            if (value && EasyPermissions.hasPermissions(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+        networkViewModel.networkLiveData.observe(this, { value ->
+            if (value && EasyPermissions.hasPermissions(
+                    this,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                )
+            ) {
                 requestVenueInfo()
             }
         })
+        val groundSageMgr = IAGSManager.getInstance(this)
+        groundSageMgr.addGroundSageListener(this)
+        groundSageMgr.addIARegionListener(this)
+        subscriptionSwitch.setOnClickListener {
+            if (subscriptionSwitch.isChecked) {
+                groundSageMgr.startSubscription()
+            } else {
+                groundSageMgr.stopSubscription()
+            }
+        }
         startForegroundService()
     }
 
@@ -79,11 +94,15 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
         return Intent(this, ForegroundService::class.java)
     }
 
-    private fun startForegroundService(){
+    private fun startForegroundService() {
         ContextCompat.startForegroundService(this, getForegroundServiceIntent())
     }
 
-    private fun requestVenueInfo(){
+    private fun stopForegroundService() {
+        stopService(getForegroundServiceIntent())
+    }
+
+    private fun requestVenueInfo() {
         IAGSManager.getInstance(this).requestVenueInfo { venues, error ->
             if (venues != null && rows.size == 0) {
                 Venue.setVenue(venues[0])
@@ -115,8 +134,6 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
                 }
                 adapter = RecyclerAdapter(rows, this)
                 recyclerView.adapter = adapter
-                subscriptionSwitch.isEnabled =
-                    EasyPermissions.hasPermissions(this, Manifest.permission.ACCESS_FINE_LOCATION)
             } else {
                 Log.d("MainActivity", "venues is null")
             }
@@ -136,16 +153,6 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
             broadcastIntent.addAction(LocationManager.PROVIDERS_CHANGED_ACTION)
             registerReceiver(it, broadcastIntent)
         }
-        val groundSageMgr = IAGSManager.getInstance(this)
-        groundSageMgr.addGroundSageListener(this)
-        groundSageMgr.addIARegionListener(this)
-        subscriptionSwitch.setOnClickListener {
-            if (subscriptionSwitch.isChecked) {
-                groundSageMgr.startSubscription()
-            } else {
-                groundSageMgr.stopSubscription()
-            }
-        }
     }
 
     override fun onPause() {
@@ -155,6 +162,8 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
 
     override fun onDestroy() {
         super.onDestroy()
+        Log.d("MainActivity", "onDestroy")
+        stopForegroundService()
         binding.networkViewModel?.networkChangeReceiver.let {
             unregisterReceiver(it)
         }
@@ -162,12 +171,14 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
 
     override fun onEnterDensityRegion(region: IARegion, venue: IAGSVenue) {
         Log.d("MainActivity", "onEnterDensityRegion")
-        Snackbar.make(frameLayout, "Enter density region ${region.name}", Snackbar.LENGTH_LONG).show()
+        Snackbar.make(frameLayout, "Enter density region ${region.name}", Snackbar.LENGTH_LONG)
+            .show()
     }
 
     override fun onExitDensityRegion(region: IARegion, venue: IAGSVenue) {
         Log.d("MainActivity", "onEnterDensityRegion")
-        Snackbar.make(frameLayout, "Exit density region ${region.name}", Snackbar.LENGTH_LONG).show()
+        Snackbar.make(frameLayout, "Exit density region ${region.name}", Snackbar.LENGTH_LONG)
+            .show()
     }
 
     override fun onUpdateDensity(venueDensity: IAGSVenueDensity?) {
@@ -199,14 +210,14 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
         loadFragment(fragment)
     }
 
-    fun loadFragment(fragment: Fragment){
+    fun loadFragment(fragment: Fragment) {
         val fragmentTransaction = supportFragmentManager.beginTransaction()
         fragmentTransaction.replace(R.id.frameLayout, fragment).commit()
     }
 
     override fun onEnterRegion(region: IARegion?) {
         Log.d("MainActivity", "onEnterRegion")
-        if (region?.type == IARegion.TYPE_FLOOR_PLAN){
+        if (region?.type == IARegion.TYPE_FLOOR_PLAN) {
             Log.d("MainActivity", "onEnterRegion save region")
             networkViewModel.region.postValue(region)
         }
@@ -216,7 +227,7 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
         //Clear all density properties
 
         rows.forEach {
-            if (it is AreaRow){
+            if (it is AreaRow) {
                 it.densityProperty = null
             }
         }

@@ -43,9 +43,7 @@ platform :android do
         "bintrayApiKey": "#{ENV["BINTRAY_API_KEY"]}",
         "googleMapsApiKey": "#{ENV["MAP_API_KEY"]}",
         "iagsApiKey": "#{ENV["SITCP_API_KEY"]}",
-        "iagsApiSecret": "#{ENV["SITCP_SECRET"]}",
-        "iagsApiEndpoint": "#{ENV["IAGS_CUSTOM_ENDPOINT"]}",
-        "iacustomEndpoint": "#{ENV["IA_CUSTOM_ENDPOINT"]}"
+        "iagsApiSecret": "#{ENV["SITCP_SECRET"]}"
       }
     )
     appcenter_upload(
