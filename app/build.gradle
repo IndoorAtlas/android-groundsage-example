@@ -12,7 +12,7 @@ android {
 
     defaultConfig {
         applicationId "com.example.groundsage_example"
-        minSdkVersion 24
+        minSdkVersion 23
         targetSdkVersion 30
         versionCode 1
         versionName "1.1.0"
@@ -33,6 +33,11 @@ android {
     buildFeatures {
         viewBinding true
         dataBinding true
+    }
+
+    compileOptions {
+        sourceCompatibility 1.8
+        targetCompatibility 1.8
     }
 }
 
