@@ -68,15 +68,8 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
                 Manifest.permission.ACCESS_FINE_LOCATION
             )
         )
-        networkViewModel.networkLiveData.observe(this, { value ->
-            if (value && EasyPermissions.hasPermissions(
-                    this,
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                )
-            ) {
-                requestVenueInfo()
-            }
-        })
+        requestVenueInfo()
+
         val groundSageMgr = IAGSManager.getInstance(this)
         groundSageMgr.addGroundSageListener(this)
         groundSageMgr.addIARegionListener(this)

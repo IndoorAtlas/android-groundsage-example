@@ -54,9 +54,6 @@ class NetworkViewModel : ViewModel() {
         lastUpdateDate.postValue(String.format("Last density update: $currentDateTime"))
     }
 
-    val networkLiveData: LiveData<Boolean>
-        get() = networkAvailable
-
     val networkChangeReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             when {
