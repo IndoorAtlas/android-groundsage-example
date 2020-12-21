@@ -299,11 +299,22 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
                 groundSageMgr.addIALocationListener(this)
             }
 
+            //add cloud geofences callback
+            initGeofence()
             if (floorValue == 19) {
+                //add dynamic geofences callback when switch is on
                 initDynamicSwitch()
             }
             gmap.setOnMapClickListener(this)
         }
+    }
+
+    private fun initGeofence(){
+        val geofenceRequest =
+            IAGeofenceRequest.Builder().withCloudGeofences(true).build()
+        groundSageMgr.addGeofences(
+            geofenceRequest, geofenceListener
+        )
     }
 
     private fun initExtraGeoFence(
@@ -316,11 +327,11 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
         geoSwitch.visibility = View.VISIBLE
         geoSwitch.setOnClickListener {
             if (geoSwitch.isChecked) {
-                val geofenceRequest =
+                val newRequest =
                     IAGeofenceRequest.Builder().withCloudGeofences(true).withGeofence(extraGeofence)
                         .build()
                 groundSageMgr.addGeofences(
-                    geofenceRequest, geofenceListener
+                    newRequest, geofenceListener
                 )
                 drawIARegions(polygons, arrayListOf(extraGeofence), color)
             } else {
@@ -340,11 +351,11 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
         geoSwitch.visibility = View.VISIBLE
         geoSwitch.setOnClickListener {
             if (geoSwitch.isChecked) {
-                val geofenceRequest =
+                val newRequest =
                     IAGeofenceRequest.Builder().withCloudGeofences(true)
                         .withGeofences(extraGeofencelist).build()
                 groundSageMgr.addGeofences(
-                    geofenceRequest, geofenceListener
+                    newRequest, geofenceListener
                 )
                 drawIARegions(polygons, extraGeofencelist, color)
             } else {
