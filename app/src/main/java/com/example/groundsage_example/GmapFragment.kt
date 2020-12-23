@@ -297,7 +297,6 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
                 groundSageMgr.addGroundSageListener(this)
                 groundSageMgr.addIARegionListener(this)
                 groundSageMgr.addIALocationListener(this)
-                groundSageMgr.startSubscription()
             }
 
             //add cloud geofences callback
@@ -305,6 +304,9 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
             if (floorValue == 19) {
                 //add dynamic geofences callback when switch is on
                 initDynamicSwitch()
+            }
+            networkViewModel.region.value?.let {
+                onEnterRegion(it)
             }
             gmap.setOnMapClickListener(this)
         }
