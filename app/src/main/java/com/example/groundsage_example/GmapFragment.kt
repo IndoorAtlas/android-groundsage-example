@@ -297,6 +297,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
                 groundSageMgr.addGroundSageListener(this)
                 groundSageMgr.addIARegionListener(this)
                 groundSageMgr.addIALocationListener(this)
+                groundSageMgr.startSubscription()
             }
 
             //add cloud geofences callback
