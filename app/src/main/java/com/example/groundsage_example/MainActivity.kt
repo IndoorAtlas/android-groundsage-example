@@ -5,17 +5,14 @@ import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.SharedPreferences
 import android.location.LocationManager
 import android.net.ConnectivityManager
 import android.os.Bundle
 import android.util.Log
-import android.view.View
 import android.widget.FrameLayout
 import android.widget.Switch
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
@@ -34,7 +31,7 @@ import pub.devrel.easypermissions.EasyPermissions
 class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler,
     IARegion.Listener {
 
-    private lateinit var networkViewModel: NetworkViewModel
+    private lateinit var appStatusViewModel: AppStatusViewModel
     private lateinit var binding: ActivityMainBinding
     private var rows = mutableListOf<TableRow>()
     lateinit var recyclerView: RecyclerView
@@ -50,9 +47,9 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        networkViewModel = ViewModelProvider(this).get(NetworkViewModel::class.java)
+        appStatusViewModel = ViewModelProvider(this).get(AppStatusViewModel::class.java)
         binding = DataBindingUtil.setContentView<ActivityMainBinding>(this, R.layout.activity_main)
-        binding.networkViewModel = networkViewModel
+        binding.appStatusViewModel = appStatusViewModel
         binding.lifecycleOwner = this
 
         recyclerView = findViewById<RecyclerView>(R.id.densityListView)
@@ -60,9 +57,9 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
         title = findViewById(R.id.activityTitle)
         subscriptionSwitch = findViewById<Switch>(R.id.subscriptionSwitch)
         lastUpdate = findViewById<TextView>(R.id.lastUpdate)
-        networkViewModel.selectedFloorLevel.postValue(-999)
-        networkViewModel.initWarningMessageStatus(this)
-        networkViewModel.locationPermissionGranted.postValue(
+        appStatusViewModel.selectedFloorLevel.postValue(-999)
+        appStatusViewModel.initWarningMessageStatus(this)
+        appStatusViewModel.locationPermissionGranted.postValue(
             EasyPermissions.hasPermissions(
                 this,
                 Manifest.permission.ACCESS_FINE_LOCATION
@@ -139,7 +136,7 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
     override fun onResume() {
         super.onResume()
         Log.d("MainActivity", "onResume")
-        binding.networkViewModel?.networkChangeReceiver.let {
+        binding.appStatusViewModel?.networkChangeReceiver.let {
             val broadcastIntent = IntentFilter()
             broadcastIntent.addAction(ConnectivityManager.CONNECTIVITY_ACTION)
             broadcastIntent.addAction(BluetoothAdapter.ACTION_STATE_CHANGED)
@@ -157,7 +154,7 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
         super.onDestroy()
         Log.d("MainActivity", "onDestroy")
         stopForegroundService()
-        binding.networkViewModel?.networkChangeReceiver.let {
+        binding.appStatusViewModel?.networkChangeReceiver.let {
             unregisterReceiver(it)
         }
     }
@@ -177,7 +174,7 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
     override fun onUpdateDensity(venueDensity: IAGSVenueDensity?) {
         Log.d("MainActivity", "onUpdateDensity")
         //update density status
-        networkViewModel.updateLastDensityUpdate()
+        appStatusViewModel.updateLastDensityUpdate()
         venueDensity?.area?.let {
             for (i in 1..it.size) {
                 val item = rows.first { row ->
@@ -192,13 +189,13 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
         }
         IAGSManager.getInstance(this).extraInfo?.let {
             val traceId = it.traceId.substring(IntRange(0, it.traceId.indexOf(".") - 1))
-            networkViewModel.traceID.postValue(String.format("Trace ID: $traceId"))
+            appStatusViewModel.traceID.postValue(String.format("Trace ID: $traceId"))
         }
     }
 
     override fun forwardClick(holder: FloorViewHolder) {
         Log.d("MainActivity", holder.floorLevel.text as String)
-        networkViewModel.selectedFloorLevel.postValue(holder.floor)
+        appStatusViewModel.selectedFloorLevel.postValue(holder.floor)
         val fragment = GmapFragment()
         loadFragment(fragment)
     }
@@ -212,7 +209,7 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
         Log.d("MainActivity", "onEnterRegion")
         if (region?.type == IARegion.TYPE_FLOOR_PLAN) {
             Log.d("MainActivity", "onEnterRegion save region")
-            networkViewModel.region.postValue(region)
+            appStatusViewModel.region.postValue(region)
         }
     }
 

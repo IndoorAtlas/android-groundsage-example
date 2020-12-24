@@ -5,57 +5,74 @@
     <data>
         <import type="android.view.View"/>
         <variable
-            name="networkViewModel"
-            type="com.example.groundsage_example.NetworkViewModel" />
+            name="appStatusViewModel"
+            type="com.example.groundsage_example.AppStatusViewModel" />
     </data>
-    <FrameLayout
+    <LinearLayout
         android:id="@+id/fragmentLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context=".GmapFragment">
+        tools:context=".GmapFragment"
+        android:orientation="vertical">
 
-        <com.google.android.gms.maps.MapView
-            android:id="@+id/gmap"
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginTop="0dp"
-            android:layout_marginBottom="0dp" />
+            android:layout_weight="1">
+
+            <com.google.android.gms.maps.MapView
+                android:id="@+id/gmap"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="0dp"
+                android:layout_marginBottom="0dp"
+                />
+
+            <TextView
+                style="@style/Warning_message"
+                android:id="@+id/exitRegionMsg"
+                android:text="Out of venue"
+                android:visibility="@{appStatusViewModel.exitRegionMsg? View.VISIBLE : View.GONE}"
+                tools:visibility="gone"/>
+
+            <Switch
+                android:id="@+id/dynamicGeo"
+                android:text="dynamic geofence"
+                android:layout_gravity="end|bottom"
+                android:layout_marginBottom="60dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                android:checked="false"
+                tools:ignore="UseSwitchCompatOrMaterialXml" />
+            <Switch
+                android:id="@+id/dynamicGeoOverlap"
+                android:text="dynamic geofence (overlap)"
+                android:layout_marginBottom="30dp"
+                android:layout_gravity="end|bottom"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                android:checked="false"
+                tools:ignore="UseSwitchCompatOrMaterialXml" />
+            <Switch
+                android:id="@+id/dynamicD1D2"
+                android:text="dynamic geofence (d1d2)"
+                android:layout_gravity="end|bottom"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                android:checked="false"
+                tools:ignore="UseSwitchCompatOrMaterialXml" />
+        </FrameLayout>
 
         <TextView
-            style="@style/Warning_message"
-            android:id="@+id/exitRegionMsg"
-            android:text="Out of venue"
-            android:visibility="@{networkViewModel.exitRegionMsg? View.VISIBLE : View.GONE}"
-            tools:visibility="gone"/>
+            android:id="@+id/logText"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:textSize="14dp"
+            android:maxLines="100"
+            android:background="@android:color/white"/>
 
-        <Switch
-            android:id="@+id/dynamicGeo"
-            android:text="dynamic geofence"
-            android:layout_gravity="end|bottom"
-            android:layout_marginBottom="60dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:visibility="gone"
-            android:checked="false"
-            tools:ignore="UseSwitchCompatOrMaterialXml" />
-        <Switch
-            android:id="@+id/dynamicGeoOverlap"
-            android:text="dynamic geofence (overlap)"
-            android:layout_marginBottom="30dp"
-            android:layout_gravity="end|bottom"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:visibility="gone"
-            android:checked="false"
-            tools:ignore="UseSwitchCompatOrMaterialXml" />
-        <Switch
-            android:id="@+id/dynamicD1D2"
-            android:text="dynamic geofence (d1d2)"
-            android:layout_gravity="end|bottom"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:visibility="gone"
-            android:checked="false"
-            tools:ignore="UseSwitchCompatOrMaterialXml" />
-    </FrameLayout>
+    </LinearLayout>
 </layout>

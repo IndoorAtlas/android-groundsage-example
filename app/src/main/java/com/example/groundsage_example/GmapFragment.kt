@@ -4,11 +4,12 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.os.Bundle
+import android.text.method.ScrollingMovementMethod
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.FrameLayout
+import android.widget.LinearLayout
 import android.widget.Switch
 import android.widget.TextView
 import androidx.core.content.ContextCompat
@@ -21,7 +22,6 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.*
-import com.google.android.material.snackbar.Snackbar
 import com.indooratlas.android.sdk.*
 import com.indooratlas.android.sdk.resources.IAFloorPlan
 import com.indooratlas.sdk.groundsage.IAGSManager
@@ -58,12 +58,13 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
     private val mDynamicPolygonsD1D2 = mutableListOf<Polygon>()
 
     private lateinit var areaList: List<RecyclerAdapter.AreaRow>
-    private lateinit var mapLayout: FrameLayout
+    private lateinit var mapLayout: LinearLayout
     private lateinit var exitRegionText: TextView
+    private lateinit var logText: TextView
     private lateinit var dynamicGeo: Switch
     private lateinit var dynamicGeoOverlap: Switch
     private lateinit var dynamicGeoD1D2: Switch
-    private lateinit var networkViewModel: NetworkViewModel
+    private lateinit var appStatusViewModel: AppStatusViewModel
     private lateinit var binding: FragmentGmapBinding
 
     private var wayfindingMarker: Marker? = null
@@ -77,13 +78,15 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
     ): View? {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_gmap, container, false)
         activity?.let {
-            networkViewModel = ViewModelProvider(it).get(NetworkViewModel::class.java)
+            appStatusViewModel = ViewModelProvider(it).get(AppStatusViewModel::class.java)
         }
 
-        binding.networkViewModel = networkViewModel
+        binding.appStatusViewModel = appStatusViewModel
         binding.lifecycleOwner = this
         mapLayout = binding.root.findViewById(R.id.fragmentLayout)
         exitRegionText = binding.root.findViewById(R.id.exitRegionMsg)
+        logText = binding.root.findViewById(R.id.logText)
+        logText.movementMethod = ScrollingMovementMethod()
         dynamicGeo = binding.root.findViewById(R.id.dynamicGeo)
         dynamicGeoOverlap = binding.root.findViewById(R.id.dynamicGeoOverlap)
         dynamicGeoD1D2 = binding.root.findViewById(R.id.dynamicD1D2)
@@ -95,7 +98,10 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
     }
 
     private val geofenceListener = IAGeofenceListener { geofenceEvent ->
+        var geoNameList = ""
         if (geofenceEvent.geofenceTransition == IAGeofence.GEOFENCE_TRANSITION_ENTER) {
+            Log.d("GmapFragment", "GEOFENCE_TRANSITION_ENTER")
+
             geofenceEvent.triggeringGeofences.forEach { geo ->
                 when (geo.id) {
                     DynamicGeofence.dynamicGeoID -> {
@@ -115,12 +121,12 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
                         mDynamicPolygonsD1D2[1].strokeColor = Color.BLUE
                     }
                 }
-                val snackBar =
-                    Snackbar.make(mapLayout, "Enter ${geo.name}", Snackbar.LENGTH_LONG)
-                snackBar.show()
+                geoNameList = geoNameList + geo.name + ", "
             }
+            logText.append("${appStatusViewModel.getCurrentDateTime()} Enter $geoNameList \n")
 
         } else {
+            Log.d("GmapFragment", "GEOFENCE_TRANSITION_EXIT")
             geofenceEvent.triggeringGeofences.forEach { geo ->
                 when (geo.id) {
                     DynamicGeofence.dynamicGeoID -> {
@@ -152,10 +158,9 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
                         } ?: kotlin.run { mDynamicPolygonsD1D2[1].strokeColor = Color.DKGRAY }
                     }
                 }
-                val snackBar =
-                    Snackbar.make(mapLayout, "Exit ${geo.name}", Snackbar.LENGTH_LONG)
-                snackBar.show()
+                geoNameList = geoNameList + geo.name + ", "
             }
+            logText.append("${appStatusViewModel.getCurrentDateTime()} Exit $geoNameList \n")
         }
     }
 
@@ -166,11 +171,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
             mCurrentRoute = null
             mWayfindingDestination = null
             groundSageMgr.removeWayfindingUpdates()
-            Snackbar.make(
-                mapLayout,
-                "You are there~",
-                Snackbar.LENGTH_LONG
-            ).show()
+            logText.append("${appStatusViewModel.getCurrentDateTime()} Wayfinding: arrived \n")
         }
         updateRouteVisualization()
 
@@ -252,25 +253,20 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
                     wayfindingMarker?.remove()
                     wayfindingMarker = null
                     updateRouteVisualization()
-                    Snackbar.make(
-                        mapLayout,
-                        "Wayfinding cancel",
-                        Snackbar.LENGTH_LONG
-                    ).show()
+                    logText.append("${appStatusViewModel.getCurrentDateTime()} Wayfinding cancel\n")
                 }
                 false
             }
         }
-        Snackbar.make(
-            mapLayout,
-            "Set destination ${mWayfindingDestination?.latitude} ${mWayfindingDestination?.longitude}\nfloor: ${mWayfindingDestination?.floor}",
-            Snackbar.LENGTH_LONG
-        ).show()
+        logText.append(
+            "${appStatusViewModel.getCurrentDateTime()} Wayfinding: set destination ${mWayfindingDestination?.latitude} ${mWayfindingDestination?.longitude}\n" +
+                    "floor: ${mWayfindingDestination?.floor}\n"
+        )
     }
 
     override fun onMapReady(map: GoogleMap?) {
         Log.d("GmapFragment", "onMapReady")
-        networkViewModel.selectedFloorLevel.value?.let {
+        appStatusViewModel.selectedFloorLevel.value?.let {
             floorValue = it
         }
 
@@ -280,7 +276,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
             gmap.uiSettings.isTiltGesturesEnabled = false
             gmap.isBuildingsEnabled = false
 
-            networkViewModel.region.value?.let {
+            appStatusViewModel.region.value?.let {
                 Log.d("GmapFragment", "onMapReady get region")
                 val iaLatLng = it.floorPlan.center
                 val center = LatLng(iaLatLng.latitude, iaLatLng.longitude)
@@ -305,14 +301,15 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
                 //add dynamic geofences callback when switch is on
                 initDynamicSwitch()
             }
-            networkViewModel.region.value?.let {
+            appStatusViewModel.region.value?.let {
                 onEnterRegion(it)
             }
             gmap.setOnMapClickListener(this)
         }
     }
 
-    private fun initGeofence(){
+    private fun initGeofence() {
+        Log.d("GmapFragment", "initGeofence")
         val geofenceRequest =
             IAGeofenceRequest.Builder().withCloudGeofences(true).build()
         groundSageMgr.addGeofences(
@@ -529,16 +526,12 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
                     setGroundOverlay(it, floorPlan)
                     currentFloorPlan = floorPlan
                 } ?: kotlin.run {
-                    val snackBar =
-                        Snackbar.make(mapLayout, "Load floorPlan failed", Snackbar.LENGTH_LONG)
-                    snackBar.show()
+                    logText.append("${appStatusViewModel.getCurrentDateTime()} Load floorPlan failed \n")
                 }
             }
 
             override fun onBitmapFailed(e: Exception?, errorDrawable: Drawable?) {
-                val snackBar =
-                    Snackbar.make(mapLayout, "Download floorPlan failed", Snackbar.LENGTH_LONG)
-                snackBar.show()
+                logText.append("${appStatusViewModel.getCurrentDateTime()} Download floorPlan failed \n")
             }
 
             override fun onPrepareLoad(placeHolderDrawable: Drawable?) {
@@ -548,27 +541,18 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
     }
 
     override fun onEnterDensityRegion(region: IARegion, venue: IAGSVenue) {
-        val snackBar =
-            Snackbar.make(
-                mapLayout,
-                "Enter density region: ${region.name} venue: ${venue.id}",
-                Snackbar.LENGTH_LONG
-            )
-        snackBar.show()
+        Log.d("GmapFragment", "onEnterDensityRegion")
+        logText.append("${appStatusViewModel.getCurrentDateTime()} Enter density region: ${region.name} \n")
     }
 
     override fun onExitDensityRegion(region: IARegion, venue: IAGSVenue) {
-        val snackBar =
-            Snackbar.make(
-                mapLayout,
-                "Exit density region: ${region.name} venue: ${venue.id}",
-                Snackbar.LENGTH_LONG
-            )
-        snackBar.show()
+        Log.d("GmapFragment", "onExitDensityRegion")
+        logText.append("${appStatusViewModel.getCurrentDateTime()} Exit density region: ${region.name} \n")
     }
 
     override fun onUpdateDensity(venueDensity: IAGSVenueDensity?) {
         Log.d("GmapFragment", "onUpdateDensity")
+        logText.append("${appStatusViewModel.getCurrentDateTime()} Update density\n")
         venueDensity?.area?.let {
             for (i in 1..it.size) {
                 val item = Venue.getAreaList().first { row ->
@@ -583,46 +567,57 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
 
     override fun onEnterRegion(region: IARegion?) {
         Log.d("GmapFragment", "onEnterRegion")
+
         exitRegionText.visibility = View.GONE
         region?.let {
             if (it.type == IARegion.TYPE_FLOOR_PLAN) {
-                networkViewModel.region.postValue(it)
+                logText.append("${appStatusViewModel.getCurrentDateTime()} Enter IA floorplan: ${region?.name} \n")
+                appStatusViewModel.region.postValue(it)
                 isSameFloor = it.floorPlan.floorLevel == floorValue
                 Log.d("GmapFragment", "onEnterRegion TYPE_FLOOR_PLAN")
                 val iaLatLng = it.floorPlan.center
                 val center = LatLng(iaLatLng.latitude, iaLatLng.longitude)
                 gmap.moveCamera(CameraUpdateFactory.newLatLngZoom(center, 22F))
                 if (isSameFloor) {
-                    Log.d("GmapFragment","start fetchFloorPlanBitmap")
+                    Log.d("GmapFragment", "start fetchFloorPlanBitmap")
                     fetchFloorPlanBitmap(it.floorPlan)
                 }
+            } else if (it.type == IARegion.TYPE_VENUE){
+                logText.append("${appStatusViewModel.getCurrentDateTime()} Enter IA region: ${region.name} \n")
             }
         }
     }
 
-    override fun onExitRegion(p0: IARegion?) {
+    override fun onExitRegion(region: IARegion?) {
         //Clear blue dot and geofences color
-        exitRegionText.visibility = View.GONE
-        locationMarker?.remove()
-        circle?.remove()
+        region?.let {
+            if (it.type == IARegion.TYPE_VENUE){
+                logText.append("${appStatusViewModel.getCurrentDateTime()} Exit IA region: ${region.name} \n")
+                exitRegionText.visibility = View.VISIBLE
+                locationMarker?.remove()
+                circle?.remove()
 
-        for (i in 1..areaList.size) {
-            areaList[i - 1].areaProperty.geometry?.let {
-                val rectOptions = PolygonOptions().fillColor(Color.BLUE)
-                    .strokeColor(Color.TRANSPARENT)
-                for (j in 1..it.size) {
-                    rectOptions.add(LatLng(it[j - 1].latitude, it[j - 1].longitude))
+                for (i in 1..areaList.size) {
+                    areaList[i - 1].areaProperty.geometry?.let {
+                        val rectOptions = PolygonOptions().fillColor(Color.BLUE)
+                            .strokeColor(Color.TRANSPARENT)
+                        for (j in 1..it.size) {
+                            rectOptions.add(LatLng(it[j - 1].latitude, it[j - 1].longitude))
+                        }
+                        val polygon = gmap.addPolygon(rectOptions)
+                        polygons.add(polygon)
+                    }
                 }
-                val polygon = gmap.addPolygon(rectOptions)
-                polygons.add(polygon)
+            } else if (it.type == IARegion.TYPE_FLOOR_PLAN){
+                logText.append("${appStatusViewModel.getCurrentDateTime()} Exit IA floorplan: ${region.name} \n")
             }
         }
     }
 
     override fun onLocationChanged(location: IALocation?) {
         if (currentFloorPlan == null && isSameFloor) {
-            Log.d("GmapFragment","start fetchFloorPlanBitmap")
-            networkViewModel.region.value?.let { fetchFloorPlanBitmap(it.floorPlan) }
+            Log.d("GmapFragment", "start fetchFloorPlanBitmap")
+            appStatusViewModel.region.value?.let { fetchFloorPlanBitmap(it.floorPlan) }
         }
         location?.let {
             val point = LatLng(it.latitude, it.longitude)
@@ -648,11 +643,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
                 locationMarker?.isVisible = false
                 if (currentFloor != it.floorLevel) {
                     currentFloor = it.floorLevel
-                    Snackbar.make(
-                        mapLayout,
-                        "Your current floor is ${it.floorLevel}",
-                        Snackbar.LENGTH_LONG
-                    ).show()
+                    logText.append("${appStatusViewModel.getCurrentDateTime()} Your current floor is ${it.floorLevel}\n")
                 }
             }
             circle?.remove()
@@ -661,30 +652,13 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
     }
 
     override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
-        val snackBar = when (status) {
-            IALocationManager.STATUS_AVAILABLE -> Snackbar.make(
-                mapLayout,
-                "Status available",
-                Snackbar.LENGTH_SHORT
-            )
-            IALocationManager.STATUS_LIMITED -> Snackbar.make(
-                mapLayout,
-                "Status limited",
-                Snackbar.LENGTH_SHORT
-            )
-            IALocationManager.STATUS_OUT_OF_SERVICE -> Snackbar.make(
-                mapLayout,
-                "Status out of service",
-                Snackbar.LENGTH_SHORT
-            )
-            IALocationManager.STATUS_TEMPORARILY_UNAVAILABLE -> Snackbar.make(
-                mapLayout,
-                "Status temporarily unavailable",
-                Snackbar.LENGTH_SHORT
-            )
-            else -> Snackbar.make(mapLayout, "Status unknown status", Snackbar.LENGTH_LONG)
+        when (status) {
+            IALocationManager.STATUS_AVAILABLE -> logText.append("${appStatusViewModel.getCurrentDateTime()} Status STATUS_AVAILABLE\n")
+            IALocationManager.STATUS_LIMITED -> logText.append("${appStatusViewModel.getCurrentDateTime()} Status STATUS_LIMITED\n")
+            IALocationManager.STATUS_OUT_OF_SERVICE -> logText.append("${appStatusViewModel.getCurrentDateTime()} Status STATUS_OUT_OF_SERVICE\n")
+            IALocationManager.STATUS_TEMPORARILY_UNAVAILABLE -> logText.append("${appStatusViewModel.getCurrentDateTime()} Status STATUS_TEMPORARILY_UNAVAILABLE\n")
+            else -> logText.append("${appStatusViewModel.getCurrentDateTime()} Status unknown status\n")
         }
-        snackBar.show()
     }
 
     override fun onMapClick(point: LatLng?) {

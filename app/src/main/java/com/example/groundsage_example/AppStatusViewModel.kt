@@ -11,7 +11,7 @@ import com.indooratlas.android.sdk.IARegion
 import java.text.SimpleDateFormat
 import java.util.*
 
-class NetworkViewModel : ViewModel() {
+class AppStatusViewModel : ViewModel() {
     val networkAvailable = MutableLiveData<Boolean>()
     val bluetoothAvailable = MutableLiveData<Boolean>()
     val locationPermissionGranted = MutableLiveData<Boolean>()
@@ -52,6 +52,10 @@ class NetworkViewModel : ViewModel() {
         val currentDateTime =
             SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.getDefault()).format(Date())
         lastUpdateDate.postValue(String.format("Last density update: $currentDateTime"))
+    }
+
+    fun getCurrentDateTime():String {
+        return SimpleDateFormat("MM/dd HH:mm:ss", Locale.getDefault()).format(Date())
     }
 
     val networkChangeReceiver = object : BroadcastReceiver() {

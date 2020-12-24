@@ -5,8 +5,8 @@
     <data>
         <import type="android.view.View"/>
         <variable
-            name="networkViewModel"
-            type="com.example.groundsage_example.NetworkViewModel" />
+            name="appStatusViewModel"
+            type="com.example.groundsage_example.AppStatusViewModel" />
     </data>
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -36,15 +36,15 @@
                     android:background="@android:color/white"
                     android:text="Back"
                     android:textColor="@android:color/darker_gray"
-                    android:visibility="@{networkViewModel.showMapView? View.VISIBLE: View.GONE}"
-                    android:onClick="@{() -> networkViewModel.hideMapView()}"/>
+                    android:visibility="@{appStatusViewModel.showMapView? View.VISIBLE: View.GONE}"
+                    android:onClick="@{() -> appStatusViewModel.hideMapView()}"/>
                 <TextView
                     android:id="@+id/activityTitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:paddingTop="10dp"
                     android:paddingBottom="10dp"
-                    android:text="@{networkViewModel.activityTitle}"
+                    android:text="@{appStatusViewModel.activityTitle}"
                     android:textSize="18dp"
                     android:textStyle="bold"
                     android:textColor="@color/colorAccent"
@@ -93,7 +93,7 @@
             android:layout_marginTop="5dp"
             android:layout_marginStart="10dp"
             android:layout_marginBottom="5dp"
-            android:text="@{networkViewModel.traceID}"
+            android:text="@{appStatusViewModel.traceID}"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/appbar"
@@ -106,7 +106,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="5dp"
             android:layout_marginStart="5dp"
-            android:text="@{networkViewModel.lastUpdateDate}"
+            android:text="@{appStatusViewModel.lastUpdateDate}"
             app:layout_constraintTop_toBottomOf="@+id/densityListView"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
@@ -131,13 +131,13 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/serviceSubscription"
             app:layout_constraintBottom_toTopOf="@+id/lastUpdate"
-            android:visibility="@{networkViewModel.showMapView? View.VISIBLE : View.GONE}"
+            android:visibility="@{appStatusViewModel.showMapView? View.VISIBLE : View.GONE}"
             tools:visibility="gone"/>
 
         <TextView
             style="@style/Warning_message"
             android:text="Bluetooth disabled"
-            android:visibility="@{networkViewModel.bluetoothAvailable? View.GONE : View.VISIBLE}"
+            android:visibility="@{appStatusViewModel.bluetoothAvailable? View.GONE : View.VISIBLE}"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/appbar"
@@ -146,7 +146,7 @@
         <TextView
             style="@style/Warning_message"
             android:text="Location permission denied"
-            android:visibility="@{networkViewModel.locationPermissionGranted? View.GONE : View.VISIBLE}"
+            android:visibility="@{appStatusViewModel.locationPermissionGranted? View.GONE : View.VISIBLE}"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/appbar"
@@ -155,7 +155,7 @@
         <TextView
             style="@style/Warning_message"
             android:text="Location disabled"
-            android:visibility="@{networkViewModel.locationServiceAvailable? View.GONE : View.VISIBLE}"
+            android:visibility="@{appStatusViewModel.locationServiceAvailable? View.GONE : View.VISIBLE}"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/appbar"
@@ -164,7 +164,7 @@
         <TextView
             style="@style/Warning_message"
             android:text="No network"
-            android:visibility="@{networkViewModel.networkAvailable? View.GONE : View.VISIBLE}"
+            android:visibility="@{appStatusViewModel.networkAvailable? View.GONE : View.VISIBLE}"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/appbar"
