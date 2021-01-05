@@ -20,7 +20,6 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import com.example.groundsage_example.RecyclerAdapter.*
 import com.example.groundsage_example.databinding.ActivityMainBinding
-import com.google.android.material.snackbar.Snackbar
 import com.indooratlas.android.sdk.IARegion
 import com.indooratlas.sdk.groundsage.IAGSManager
 import com.indooratlas.sdk.groundsage.IAGSManagerListener
@@ -161,14 +160,10 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
 
     override fun onEnterDensityRegion(region: IARegion, venue: IAGSVenue) {
         Log.d("MainActivity", "onEnterDensityRegion")
-        Snackbar.make(frameLayout, "Enter density region ${region.name}", Snackbar.LENGTH_LONG)
-            .show()
     }
 
     override fun onExitDensityRegion(region: IARegion, venue: IAGSVenue) {
         Log.d("MainActivity", "onEnterDensityRegion")
-        Snackbar.make(frameLayout, "Exit density region ${region.name}", Snackbar.LENGTH_LONG)
-            .show()
     }
 
     override fun onUpdateDensity(venueDensity: IAGSVenueDensity?) {

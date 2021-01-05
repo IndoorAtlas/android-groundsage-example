@@ -542,12 +542,20 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
 
     override fun onEnterDensityRegion(region: IARegion, venue: IAGSVenue) {
         Log.d("GmapFragment", "onEnterDensityRegion")
-        logText.append("${appStatusViewModel.getCurrentDateTime()} Enter density region: ${region.name} \n")
+        logText.append("${appStatusViewModel.getCurrentDateTime()} Enter density region \n" +
+                "name: ${region.name}\n" +
+                "region id: ${region.id} \n" +
+                "venue id: ${region.venue.id}\n\n")
     }
 
     override fun onExitDensityRegion(region: IARegion, venue: IAGSVenue) {
         Log.d("GmapFragment", "onExitDensityRegion")
-        logText.append("${appStatusViewModel.getCurrentDateTime()} Exit density region: ${region.name} \n")
+        logText.append(
+            "${appStatusViewModel.getCurrentDateTime()} Exit density region\n" +
+                    "name: ${region.name} \n" +
+                    "region id: ${region.id} \n" +
+                    "venue id: ${region.venue.id}\n\n"
+        )
     }
 
     override fun onUpdateDensity(venueDensity: IAGSVenueDensity?) {
@@ -582,8 +590,11 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
                     Log.d("GmapFragment", "start fetchFloorPlanBitmap")
                     fetchFloorPlanBitmap(it.floorPlan)
                 }
-            } else if (it.type == IARegion.TYPE_VENUE){
-                logText.append("${appStatusViewModel.getCurrentDateTime()} Enter IA region: ${region.name} \n")
+            } else if (it.type == IARegion.TYPE_VENUE) {
+                logText.append("${appStatusViewModel.getCurrentDateTime()} Enter IA region\n" +
+                        "name: ${region.name} \n" +
+                        "region id: ${region.id} \n" +
+                        "venue id: ${region.venue.id}\n\n")
             }
         }
     }
@@ -591,8 +602,11 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
     override fun onExitRegion(region: IARegion?) {
         //Clear blue dot and geofences color
         region?.let {
-            if (it.type == IARegion.TYPE_VENUE){
-                logText.append("${appStatusViewModel.getCurrentDateTime()} Exit IA region: ${region.name} \n")
+            if (it.type == IARegion.TYPE_VENUE) {
+                logText.append("${appStatusViewModel.getCurrentDateTime()} Exit IA region\n" +
+                        "name: ${region.name} \n" +
+                        "region id: ${region.id} \n" +
+                        "venue id: ${region.venue.id}\n\n")
                 exitRegionText.visibility = View.VISIBLE
                 locationMarker?.remove()
                 circle?.remove()
@@ -608,7 +622,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
                         polygons.add(polygon)
                     }
                 }
-            } else if (it.type == IARegion.TYPE_FLOOR_PLAN){
+            } else if (it.type == IARegion.TYPE_FLOOR_PLAN) {
                 logText.append("${appStatusViewModel.getCurrentDateTime()} Exit IA floorplan: ${region.name} \n")
             }
         }
