@@ -24,6 +24,7 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.*
 import com.indooratlas.android.sdk.*
 import com.indooratlas.android.sdk.resources.IAFloorPlan
+import com.indooratlas.android.sdk.resources.IAVenue
 import com.indooratlas.sdk.groundsage.IAGSManager
 import com.indooratlas.sdk.groundsage.IAGSManagerListener
 import com.indooratlas.sdk.groundsage.data.IAGSVenue
@@ -34,7 +35,7 @@ import com.squareup.picasso.Target
 
 class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListener,
     IAGSManagerListener, IARegion.Listener,
-    IALocationListener {
+    IALocationListener, GoogleMap.OnMarkerClickListener {
 
     private lateinit var mapView: MapView
     private lateinit var gmap: GoogleMap
@@ -47,6 +48,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
     private val groundOverlay = GroundOverlayOptions()
     private val polygons = mutableListOf<Polygon>()
     private val markers = mutableListOf<MarkerOptions>()
+    private val poiMarkers = mutableListOf<MarkerOptions>()
     private var locationMarker: Marker? = null
     private var locationOverlay: MarkerOptions? = null
     private var circle: Circle? = null
@@ -68,9 +70,11 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
     private lateinit var binding: FragmentGmapBinding
 
     private var wayfindingMarker: Marker? = null
+    private var selectedPoiMarker: Marker? = null
     private var polylines = mutableListOf<Polyline>()
     private var mWayfindingDestination: IAWayfindingRequest? = null
     private var mCurrentRoute: IARoute? = null
+    private var mVenue: IAVenue? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -171,6 +175,9 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
             mCurrentRoute = null
             mWayfindingDestination = null
             groundSageMgr.removeWayfindingUpdates()
+            wayfindingMarker?.remove()
+            wayfindingMarker = null
+            selectedPoiMarker = null
             logText.append("${appStatusViewModel.getCurrentDateTime()} Wayfinding: arrived \n")
         }
         updateRouteVisualization()
@@ -245,18 +252,6 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
                 MarkerOptions().position(point)
                     .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
             )
-            gmap.setOnMarkerClickListener { marker ->
-                if (marker == wayfindingMarker) {
-                    mCurrentRoute = null
-                    mWayfindingDestination = null
-                    groundSageMgr.removeWayfindingUpdates()
-                    wayfindingMarker?.remove()
-                    wayfindingMarker = null
-                    updateRouteVisualization()
-                    logText.append("${appStatusViewModel.getCurrentDateTime()} Wayfinding cancel\n")
-                }
-                false
-            }
         }
         logText.append(
             "${appStatusViewModel.getCurrentDateTime()} Wayfinding: set destination ${mWayfindingDestination?.latitude} ${mWayfindingDestination?.longitude}\n" +
@@ -305,6 +300,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
                 onEnterRegion(it)
             }
             gmap.setOnMapClickListener(this)
+            gmap.setOnMarkerClickListener(this)
         }
     }
 
@@ -491,6 +487,24 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
         }
     }
 
+    private fun setPois(iaVenue:IAVenue){
+        logText.append("${appStatusViewModel.getCurrentDateTime()} setPois poi count: ${iaVenue.poIs.size}\n")
+        poiMarkers.clear()
+        iaVenue.poIs?.forEach { it ->
+            logText.append("${appStatusViewModel.getCurrentDateTime()} poi name: ${it.name} floor: ${it.floor}\n")
+            if (it.floor == currentFloor){
+                poiMarkers.add(
+                        MarkerOptions().position(LatLng(it.location.latitude, it.location.longitude))
+                            .title(it.name).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+                    )
+            }
+            poiMarkers.forEach {
+                gmap.addMarker(it)
+            }
+
+        }
+    }
+
     private fun drawLabel() {
         markers.forEach {
             gmap.addMarker(it)
@@ -562,6 +576,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
         Log.d("GmapFragment", "onUpdateDensity")
         logText.append("${appStatusViewModel.getCurrentDateTime()} Update density\n")
         venueDensity?.area?.let {
+            logText.append("${appStatusViewModel.getCurrentDateTime()} onUpdateDensity area size: ${venueDensity.area?.size}\n")
             for (i in 1..it.size) {
                 val item = Venue.getAreaList().first { row ->
                     row.areaProperty.id == it[i - 1].areaId
@@ -570,6 +585,8 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
             }
             drawRegions()
             drawLabel()
+        } ?: kotlin.run {
+            logText.append("${appStatusViewModel.getCurrentDateTime()} onUpdateDensity no are\n")
         }
     }
 
@@ -581,6 +598,8 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
             if (it.type == IARegion.TYPE_FLOOR_PLAN) {
                 logText.append("${appStatusViewModel.getCurrentDateTime()} Enter IA floorplan: ${region?.name} \n")
                 appStatusViewModel.region.postValue(it)
+                currentFloor = it.floorPlan.floorLevel
+                mVenue?.let { venue -> setPois(venue) }
                 isSameFloor = it.floorPlan.floorLevel == floorValue
                 Log.d("GmapFragment", "onEnterRegion TYPE_FLOOR_PLAN")
                 val iaLatLng = it.floorPlan.center
@@ -591,6 +610,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
                     fetchFloorPlanBitmap(it.floorPlan)
                 }
             } else if (it.type == IARegion.TYPE_VENUE) {
+                mVenue = it.venue
                 logText.append("${appStatusViewModel.getCurrentDateTime()} Enter IA region\n" +
                         "name: ${region.name} \n" +
                         "region id: ${region.id} \n" +
@@ -609,6 +629,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
                         "venue id: ${region.venue.id}\n\n")
                 exitRegionText.visibility = View.VISIBLE
                 locationMarker?.remove()
+                poiMarkers.clear()
                 circle?.remove()
 
                 for (i in 1..areaList.size) {
@@ -677,9 +698,40 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
 
     override fun onMapClick(point: LatLng?) {
         point?.let {
-            if (wayfindingMarker == null) {
+            if (wayfindingMarker == null && poiMarkers.isEmpty()) {
                 setWayfindingTarget(it, true)
             }
         }
+    }
+
+    override fun onMarkerClick(marker: Marker?): Boolean {
+        if (marker == wayfindingMarker){
+            mCurrentRoute = null
+            mWayfindingDestination = null
+            groundSageMgr.removeWayfindingUpdates()
+            updateRouteVisualization()
+            logText.append("${appStatusViewModel.getCurrentDateTime()} Wayfinding cancel\n")
+            wayfindingMarker?.remove()
+            wayfindingMarker = null
+            return false
+        }
+
+        if (selectedPoiMarker == null){
+            marker?.let {
+                selectedPoiMarker = it
+                setWayfindingTarget(it.position, false)
+            }
+        } else {
+            if (marker == selectedPoiMarker) {
+                mCurrentRoute = null
+                mWayfindingDestination = null
+                groundSageMgr.removeWayfindingUpdates()
+                updateRouteVisualization()
+                logText.append("${appStatusViewModel.getCurrentDateTime()} Wayfinding cancel\n")
+                selectedPoiMarker = null
+            }
+        }
+
+        return false
     }
 }

@@ -185,6 +185,8 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
         IAGSManager.getInstance(this).extraInfo?.let {
             val traceId = it.traceId.substring(IntRange(0, it.traceId.indexOf(".") - 1))
             appStatusViewModel.traceID.postValue(String.format("Trace ID: $traceId"))
+        } ?: kotlin.run {
+            appStatusViewModel.traceID.postValue(String.format("Trace ID: null"))
         }
     }
 
