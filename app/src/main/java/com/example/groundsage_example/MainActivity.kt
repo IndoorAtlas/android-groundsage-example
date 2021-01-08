@@ -16,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import com.example.groundsage_example.RecyclerAdapter.*
@@ -64,11 +65,14 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
                 Manifest.permission.ACCESS_FINE_LOCATION
             )
         )
-        requestVenueInfo()
-
         val groundSageMgr = IAGSManager.getInstance(this)
         groundSageMgr.addGroundSageListener(this)
         groundSageMgr.addIARegionListener(this)
+        appStatusViewModel.networkAvailable.observe(this, Observer {
+            if (it){
+                requestVenueInfo()
+            }
+        })
         subscriptionSwitch.setOnClickListener {
             if (subscriptionSwitch.isChecked) {
                 groundSageMgr.startSubscription()
@@ -123,6 +127,10 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
                 }
                 adapter = RecyclerAdapter(rows, this)
                 recyclerView.adapter = adapter
+
+                if (subscriptionSwitch.isChecked) {
+                    IAGSManager.getInstance(this).startSubscription()
+                }
             } else {
                 Log.d("MainActivity", "venues is null")
             }
