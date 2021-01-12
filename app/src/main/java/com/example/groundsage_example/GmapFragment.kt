@@ -11,6 +11,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.Switch
+import android.widget.TableRow
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
@@ -40,15 +41,16 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
     private lateinit var mapView: MapView
     private lateinit var gmap: GoogleMap
     private lateinit var groundSageMgr: IAGSManager
-
+    private var locateMe = false
     private var currentFloor = -999
     private var floorValue: Int = -999
     private var isSameFloor = false
     private var mGroundOverlay: GroundOverlay? = null
     private val groundOverlay = GroundOverlayOptions()
     private val polygons = mutableListOf<Polygon>()
-    private val markers = mutableListOf<MarkerOptions>()
-    private val poiMarkers = mutableListOf<MarkerOptions>()
+    private val geofenceMarkerOverlays = mutableListOf<MarkerOptions>()
+    private val geofenceMarkers = mutableListOf<Marker>()
+    private val poiMarkers = mutableListOf<Marker>()
     private var locationMarker: Marker? = null
     private var locationOverlay: MarkerOptions? = null
     private var circle: Circle? = null
@@ -260,9 +262,11 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
     }
 
     override fun onMapReady(map: GoogleMap?) {
-        Log.d("GmapFragment", "onMapReady")
         appStatusViewModel.selectedFloorLevel.value?.let {
             floorValue = it
+            locateMe = false
+        } ?: kotlin.run {
+            locateMe = true
         }
 
         map?.let {
@@ -271,16 +275,8 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
             gmap.uiSettings.isTiltGesturesEnabled = false
             gmap.isBuildingsEnabled = false
 
-            appStatusViewModel.region.value?.let {
-                Log.d("GmapFragment", "onMapReady get region")
-                val iaLatLng = it.floorPlan.center
-                val center = LatLng(iaLatLng.latitude, iaLatLng.longitude)
 
-                gmap.moveCamera(CameraUpdateFactory.newLatLngZoom(center, 22F))
-                if (it.floorPlan.floorLevel == floorValue) {
-                    fetchFloorPlanBitmap(it.floorPlan)
-                }
-            }
+
             drawRegions()
             drawLabel()
             context?.let {
@@ -289,14 +285,14 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
                 groundSageMgr.addIARegionListener(this)
                 groundSageMgr.addIALocationListener(this)
             }
-
             //add cloud geofences callback
             initGeofence()
-            if (floorValue == 19) {
-                //add dynamic geofences callback when switch is on
-                initDynamicSwitch()
+
+            appStatusViewModel.venueRegion.value?.let {
+                onEnterRegion(it)
             }
-            appStatusViewModel.region.value?.let {
+
+            appStatusViewModel.floorplanRegion.value?.let {
                 onEnterRegion(it)
             }
             gmap.setOnMapClickListener(this)
@@ -305,7 +301,6 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
     }
 
     private fun initGeofence() {
-        Log.d("GmapFragment", "initGeofence")
         val geofenceRequest =
             IAGeofenceRequest.Builder().withCloudGeofences(true).build()
         groundSageMgr.addGeofences(
@@ -314,56 +309,73 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
     }
 
     private fun initExtraGeoFence(
+        enabled: Boolean,
         geoSwitch: Switch,
         extraGeofence: IAGeofence,
         polygons: MutableList<Polygon>,
         color: Int,
         geofenceID: String
     ) {
-        geoSwitch.visibility = View.VISIBLE
-        geoSwitch.setOnClickListener {
-            if (geoSwitch.isChecked) {
-                val newRequest =
-                    IAGeofenceRequest.Builder().withCloudGeofences(true).withGeofence(extraGeofence)
-                        .build()
-                groundSageMgr.addGeofences(
-                    newRequest, geofenceListener
-                )
-                drawIARegions(polygons, arrayListOf(extraGeofence), color)
-            } else {
-                groundSageMgr.removeGeofences(arrayListOf(geofenceID))
-                clearIARegions(polygons)
+        if (enabled) {
+            geoSwitch.visibility = View.VISIBLE
+            geoSwitch.setOnClickListener {
+                if (geoSwitch.isChecked) {
+                    val newRequest =
+                        IAGeofenceRequest.Builder().withCloudGeofences(true)
+                            .withGeofence(extraGeofence)
+                            .build()
+                    groundSageMgr.addGeofences(
+                        newRequest, geofenceListener
+                    )
+                    drawIARegions(polygons, arrayListOf(extraGeofence), color)
+                } else {
+                    groundSageMgr.removeGeofences(arrayListOf(geofenceID))
+                    clearIARegions(polygons)
+                }
             }
+        } else {
+            geoSwitch.visibility = View.GONE
+            groundSageMgr.removeGeofences(arrayListOf(geofenceID))
+            clearIARegions(polygons)
         }
     }
 
     private fun initExtraGeoFenceList(
+        enabled: Boolean,
         geoSwitch: Switch,
         extraGeofencelist: List<IAGeofence>,
         polygons: MutableList<Polygon>,
         color: Int,
         geofenceIDlist: ArrayList<String>
     ) {
-        geoSwitch.visibility = View.VISIBLE
-        geoSwitch.setOnClickListener {
-            if (geoSwitch.isChecked) {
-                val newRequest =
-                    IAGeofenceRequest.Builder().withCloudGeofences(true)
-                        .withGeofences(extraGeofencelist).build()
-                groundSageMgr.addGeofences(
-                    newRequest, geofenceListener
-                )
-                drawIARegions(polygons, extraGeofencelist, color)
-            } else {
-                groundSageMgr.removeGeofences(geofenceIDlist)
-                clearIARegions(polygons)
+        if (enabled) {
+            geoSwitch.visibility = View.VISIBLE
+            geoSwitch.setOnClickListener {
+                if (geoSwitch.isChecked) {
+                    val newRequest =
+                        IAGeofenceRequest.Builder().withCloudGeofences(true)
+                            .withGeofences(extraGeofencelist).build()
+                    groundSageMgr.addGeofences(
+                        newRequest, geofenceListener
+                    )
+                    drawIARegions(polygons, extraGeofencelist, color)
+                } else {
+                    groundSageMgr.removeGeofences(geofenceIDlist)
+                    clearIARegions(polygons)
+                }
             }
+        } else {
+            geoSwitch.visibility = View.GONE
+            groundSageMgr.removeGeofences(geofenceIDlist)
+            clearIARegions(polygons)
         }
+
     }
 
-    private fun initDynamicSwitch() {
+    private fun initDynamicSwitch(enabled: Boolean) {
         context?.let {
             initExtraGeoFence(
+                enabled,
                 dynamicGeo,
                 DynamicGeofence.geofenceDynamic,
                 mDynamicPolygons,
@@ -371,6 +383,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
                 DynamicGeofence.dynamicGeoID
             )
             initExtraGeoFence(
+                enabled,
                 dynamicGeoOverlap,
                 DynamicGeofence.geofenceDynamicOverlap,
                 mDynamicPolygonsOverlap,
@@ -378,6 +391,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
                 DynamicGeofence.dynamicGeoOverlapID
             )
             initExtraGeoFenceList(
+                enabled,
                 dynamicGeoD1D2,
                 arrayListOf(DynamicGeofence.geofenceDynamicD1, DynamicGeofence.geofenceDynamicD2),
                 mDynamicPolygonsD1D2,
@@ -386,6 +400,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
             )
         } ?: kotlin.run {
             initExtraGeoFence(
+                enabled,
                 dynamicGeo,
                 DynamicGeofence.geofenceDynamic,
                 mDynamicPolygons,
@@ -393,6 +408,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
                 DynamicGeofence.dynamicGeoID
             )
             initExtraGeoFence(
+                enabled,
                 dynamicGeoOverlap,
                 DynamicGeofence.geofenceDynamicOverlap,
                 mDynamicPolygonsOverlap,
@@ -400,6 +416,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
                 DynamicGeofence.dynamicGeoOverlapID
             )
             initExtraGeoFenceList(
+                enabled,
                 dynamicGeoD1D2,
                 arrayListOf(DynamicGeofence.geofenceDynamicD1, DynamicGeofence.geofenceDynamicD2),
                 mDynamicPolygonsD1D2,
@@ -458,27 +475,32 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
     }
 
     private fun drawRegions() {
-        markers.clear()
-        polygons.let {
-            it.forEach { p -> p.remove() }
-            it.clear()
+        geofenceMarkerOverlays.clear()
+        geofenceMarkers.forEach { p -> p.remove() }
+        geofenceMarkers.clear()
+        polygons.forEach { p -> p.remove() }
+        polygons.clear()
+        if (locateMe) {
+            areaList = Venue.getFilteredAreaList(currentFloor)
+        } else {
+            areaList = Venue.getFilteredAreaList(floorValue)
         }
-        areaList = Venue.getFilteredAreaList(floorValue)
+
         areaList.forEach { area ->
-            area.areaProperty.geometry?.let {
-                val rectOptions = PolygonOptions().fillColor(
-                    area.densityProperty?.densityColor?.toInt() ?: Color.BLUE
-                ).strokeColor(
-                    Color.TRANSPARENT
-                )
-                it.forEach { point ->
+            area.areaProperty.geometry?.let { geometry ->
+                val rectOptions = PolygonOptions().strokeColor(Color.TRANSPARENT)
+                area.densityProperty?.densityColor?.let {color ->
+                    rectOptions.fillColor(color.toInt()) } ?: kotlin.run {
+                    rectOptions.fillColor(Color.BLUE)
+                }
+                geometry.forEach { point ->
                     rectOptions.add(LatLng(point.latitude, point.longitude))
                 }
                 val polygon = gmap.addPolygon(rectOptions)
                 polygons.add(polygon)
 
                 getPolygonCenterPoint(rectOptions)?.let { latLng ->
-                    markers.add(
+                    geofenceMarkerOverlays.add(
                         MarkerOptions().position(latLng)
                             .title(area.areaProperty.description)
                     )
@@ -487,27 +509,30 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
         }
     }
 
-    private fun setPois(iaVenue:IAVenue){
-        logText.append("${appStatusViewModel.getCurrentDateTime()} setPois poi count: ${iaVenue.poIs.size}\n")
+    private fun setPois(iaVenue: IAVenue) {
+        poiMarkers.forEach { p -> p.remove() }
         poiMarkers.clear()
+        var f = floorValue
+        if (locateMe) {
+            f = currentFloor
+        }
         iaVenue.poIs?.forEach { it ->
-            logText.append("${appStatusViewModel.getCurrentDateTime()} poi name: ${it.name} floor: ${it.floor}\n")
-            if (it.floor == currentFloor){
-                poiMarkers.add(
-                        MarkerOptions().position(LatLng(it.location.latitude, it.location.longitude))
-                            .title(it.name).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
-                    )
+            if (it.floor == f) {
+                val poiOverlay =
+                    MarkerOptions().position(LatLng(it.location.latitude, it.location.longitude))
+                        .title(it.name)
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+                poiMarkers.add(gmap.addMarker(poiOverlay))
             }
-            poiMarkers.forEach {
-                gmap.addMarker(it)
-            }
-
         }
     }
 
     private fun drawLabel() {
-        markers.forEach {
-            gmap.addMarker(it)
+        if (currentFloorPlan == null && (isSameFloor || locateMe)) {
+            appStatusViewModel.floorplanRegion.value?.let { fetchFloorPlanBitmap(it.floorPlan) }
+        }
+        geofenceMarkerOverlays.forEach {
+            geofenceMarkers.add(gmap.addMarker(it))
         }
     }
 
@@ -521,7 +546,6 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
     }
 
     private fun setGroundOverlay(bitmap: Bitmap, floorPlan: IAFloorPlan) {
-        Log.d("GMapActivity", "setGroundOverlay")
         val iaLatLng = floorPlan.center
         val center = LatLng(iaLatLng.latitude, iaLatLng.longitude)
         val bitmapDescriptor = BitmapDescriptorFactory.fromBitmap(bitmap)
@@ -532,11 +556,9 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
     }
 
     private fun fetchFloorPlanBitmap(floorPlan: IAFloorPlan) {
-        Log.d("GmapFragment", "fetchFloorPlanBitmap ${floorPlan.url}")
         Picasso.get().load(floorPlan.url).into(object : Target {
             override fun onBitmapLoaded(bitmap: Bitmap?, from: Picasso.LoadedFrom?) {
                 bitmap?.let {
-                    Log.d("GmapFragment", "onBitmapLoaded")
                     setGroundOverlay(it, floorPlan)
                     currentFloorPlan = floorPlan
                 } ?: kotlin.run {
@@ -555,11 +577,12 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
     }
 
     override fun onEnterDensityRegion(region: IARegion, venue: IAGSVenue) {
-        Log.d("GmapFragment", "onEnterDensityRegion")
-        logText.append("${appStatusViewModel.getCurrentDateTime()} Enter density region \n" +
-                "name: ${region.name}\n" +
-                "region id: ${region.id} \n" +
-                "venue id: ${region.venue.id}\n\n")
+        logText.append(
+            "${appStatusViewModel.getCurrentDateTime()} Enter density region \n" +
+                    "name: ${region.name}\n" +
+                    "region id: ${region.id} \n" +
+                    "venue id: ${region.venue.id}\n\n"
+        )
     }
 
     override fun onExitDensityRegion(region: IARegion, venue: IAGSVenue) {
@@ -573,21 +596,17 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
     }
 
     override fun onUpdateDensity(venueDensity: IAGSVenueDensity?) {
-        Log.d("GmapFragment", "onUpdateDensity")
         logText.append("${appStatusViewModel.getCurrentDateTime()} Update density\n")
-        venueDensity?.area?.let {
-            logText.append("${appStatusViewModel.getCurrentDateTime()} onUpdateDensity area size: ${venueDensity.area?.size}\n")
-            for (i in 1..it.size) {
-                val item = Venue.getAreaList().first { row ->
-                    row.areaProperty.id == it[i - 1].areaId
-                }
-                item.densityProperty = it[i - 1].densityProperty
+
+        venueDensity?.area?.forEach {
+            val item = Venue.areaList.first { row ->
+                row.areaProperty.id == it.areaId
             }
-            drawRegions()
-            drawLabel()
-        } ?: kotlin.run {
-            logText.append("${appStatusViewModel.getCurrentDateTime()} onUpdateDensity no are\n")
+            Venue.areaList.remove(item)
+            Venue.areaList.add(RecyclerAdapter.AreaRow(item.areaProperty, it.densityProperty))
         }
+        drawRegions()
+        drawLabel()
     }
 
     override fun onEnterRegion(region: IARegion?) {
@@ -596,25 +615,37 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
         exitRegionText.visibility = View.GONE
         region?.let {
             if (it.type == IARegion.TYPE_FLOOR_PLAN) {
-                logText.append("${appStatusViewModel.getCurrentDateTime()} Enter IA floorplan: ${region?.name} \n")
-                appStatusViewModel.region.postValue(it)
+                logText.append("${appStatusViewModel.getCurrentDateTime()} Enter IA floorplan: ${it.name} \n")
+                appStatusViewModel.floorplanRegion.postValue(it)
                 currentFloor = it.floorPlan.floorLevel
                 mVenue?.let { venue -> setPois(venue) }
                 isSameFloor = it.floorPlan.floorLevel == floorValue
-                Log.d("GmapFragment", "onEnterRegion TYPE_FLOOR_PLAN")
                 val iaLatLng = it.floorPlan.center
                 val center = LatLng(iaLatLng.latitude, iaLatLng.longitude)
                 gmap.moveCamera(CameraUpdateFactory.newLatLngZoom(center, 22F))
                 if (isSameFloor) {
-                    Log.d("GmapFragment", "start fetchFloorPlanBitmap")
                     fetchFloorPlanBitmap(it.floorPlan)
                 }
+                if (locateMe) {
+                    logText.append("${appStatusViewModel.getCurrentDateTime()} update floorplan, geofences\n")
+                    appStatusViewModel.selectedFloorLevel.postValue(currentFloor)
+                    fetchFloorPlanBitmap(it.floorPlan)
+                    drawRegions()
+                    drawLabel()
+                    if (it.floorPlan.floorLevel == 19) {
+                        initDynamicSwitch(true)
+                    } else {
+                        initDynamicSwitch(false)
+                    }
+                }
             } else if (it.type == IARegion.TYPE_VENUE) {
+                logText.append(
+                    "${appStatusViewModel.getCurrentDateTime()} Enter IA region\n" +
+                            "name: ${region.name} \n" +
+                            "region id: ${region.id} \n" +
+                            "venue id: ${region.venue.id}\n\n"
+                )
                 mVenue = it.venue
-                logText.append("${appStatusViewModel.getCurrentDateTime()} Enter IA region\n" +
-                        "name: ${region.name} \n" +
-                        "region id: ${region.id} \n" +
-                        "venue id: ${region.venue.id}\n\n")
             }
         }
     }
@@ -623,12 +654,15 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
         //Clear blue dot and geofences color
         region?.let {
             if (it.type == IARegion.TYPE_VENUE) {
-                logText.append("${appStatusViewModel.getCurrentDateTime()} Exit IA region\n" +
-                        "name: ${region.name} \n" +
-                        "region id: ${region.id} \n" +
-                        "venue id: ${region.venue.id}\n\n")
+                logText.append(
+                    "${appStatusViewModel.getCurrentDateTime()} Exit IA region\n" +
+                            "name: ${region.name} \n" +
+                            "region id: ${region.id} \n" +
+                            "venue id: ${region.venue.id}\n\n"
+                )
                 exitRegionText.visibility = View.VISIBLE
                 locationMarker?.remove()
+                poiMarkers.forEach { p -> p.remove() }
                 poiMarkers.clear()
                 circle?.remove()
 
@@ -645,14 +679,17 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
                 }
             } else if (it.type == IARegion.TYPE_FLOOR_PLAN) {
                 logText.append("${appStatusViewModel.getCurrentDateTime()} Exit IA floorplan: ${region.name} \n")
+                if (locateMe) {
+                    mGroundOverlay?.remove()
+                    currentFloorPlan = null
+                }
             }
         }
     }
 
     override fun onLocationChanged(location: IALocation?) {
-        if (currentFloorPlan == null && isSameFloor) {
-            Log.d("GmapFragment", "start fetchFloorPlanBitmap")
-            appStatusViewModel.region.value?.let { fetchFloorPlanBitmap(it.floorPlan) }
+        if (currentFloorPlan == null && (isSameFloor || locateMe)) {
+            appStatusViewModel.floorplanRegion.value?.let { fetchFloorPlanBitmap(it.floorPlan) }
         }
         location?.let {
             val point = LatLng(it.latitude, it.longitude)
@@ -660,7 +697,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
                 CircleOptions().center(point).radius(it.accuracy.toDouble()).zIndex(99f)
                     .strokeWidth(3.0f)
             locationMarker?.remove()
-            if (it.floorLevel == floorValue) {
+            if (locateMe || it.floorLevel == floorValue) {
                 //show blue dot and blue circle
                 locationOverlay =
                     MarkerOptions().position(point).zIndex(100f).anchor(0.5f, 0.5f)
@@ -705,7 +742,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
     }
 
     override fun onMarkerClick(marker: Marker?): Boolean {
-        if (marker == wayfindingMarker){
+        if (marker == wayfindingMarker) {
             mCurrentRoute = null
             mWayfindingDestination = null
             groundSageMgr.removeWayfindingUpdates()
@@ -716,7 +753,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
             return false
         }
 
-        if (selectedPoiMarker == null){
+        if (selectedPoiMarker == null) {
             marker?.let {
                 selectedPoiMarker = it
                 setWayfindingTarget(it.position, false)

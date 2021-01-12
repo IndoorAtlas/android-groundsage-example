@@ -8,6 +8,8 @@ import android.location.LocationManager
 import android.net.ConnectivityManager
 import androidx.lifecycle.*
 import com.indooratlas.android.sdk.IARegion
+import com.indooratlas.android.sdk.resources.IAFloorPlan
+import com.indooratlas.android.sdk.resources.IAVenue
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -24,7 +26,8 @@ class AppStatusViewModel : ViewModel() {
         level != -999
     }
 
-    val region = MutableLiveData<IARegion>()
+    val venueRegion = MutableLiveData<IARegion>()
+    val floorplanRegion = MutableLiveData<IARegion>()
 
     val activityTitle: LiveData<String> = MediatorLiveData<String>().apply {
         val produce: () -> String? = {

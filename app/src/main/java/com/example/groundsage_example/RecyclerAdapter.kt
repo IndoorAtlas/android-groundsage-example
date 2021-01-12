@@ -23,7 +23,7 @@ class RecyclerAdapter(private val rows: List<TableRow>, context: Context) :
     class AreaRow(val areaProperty: IAGSVenue.IAGSAreaProperty, var densityProperty: IAGSVenueDensity.IAGSDensityProperty?): TableRow
 
     interface ClickEventHandler {
-        fun forwardClick(holder: FloorViewHolder)
+        fun goToMapView(holder: FloorViewHolder?)
     }
 
     companion object {
@@ -69,7 +69,7 @@ class RecyclerAdapter(private val rows: List<TableRow>, context: Context) :
                 val v = LayoutInflater.from(parent.context).inflate(R.layout.item_floor, parent, false)
                 return FloorViewHolder(v).also { floorViewHolder ->
                     v.setOnClickListener {
-                        clickHandler.forwardClick(floorViewHolder)
+                        clickHandler.goToMapView(floorViewHolder)
                     }
                 }
             }

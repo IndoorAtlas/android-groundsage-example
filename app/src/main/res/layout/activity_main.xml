@@ -54,6 +54,7 @@
 
         </com.google.android.material.appbar.AppBarLayout>
 
+
         <RelativeLayout
             android:id="@+id/serviceSubscription"
             android:layout_width="match_parent"
@@ -64,7 +65,7 @@
             app:layout_constraintTop_toBottomOf="@+id/traceID"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintBottom_toTopOf="@+id/densityListView"
+            app:layout_constraintBottom_toTopOf="@+id/locateMe"
             >
 
             <TextView
@@ -86,6 +87,36 @@
 
         </RelativeLayout>
 
+        <RelativeLayout
+            android:id="@+id/locateMe"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:layout_marginBottom="5dp"
+            android:layout_marginStart="10dp"
+            app:layout_constraintTop_toBottomOf="@+id/serviceSubscription"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:layout_marginEnd="0dp"
+                android:layout_toStartOf="@+id/locateMeButton"
+                android:text="Go to map view directly"
+                />
+
+            <Button
+                android:id="@+id/locateMeButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:text="Locate me" />
+
+        </RelativeLayout>
+
         <TextView
             android:id="@+id/traceID"
             android:layout_width="match_parent"
@@ -100,6 +131,32 @@
             app:layout_constraintBottom_toTopOf="@+id/serviceSubscription"
             />
 
+
+
+
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/densityListView"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            android:scrollbars="vertical"
+            app:layout_constraintTop_toBottomOf="@+id/locateMe"
+            app:layout_constraintBottom_toTopOf="@+id/lastUpdate"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <FrameLayout
+            android:id="@+id/frameLayout"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/locateMe"
+            app:layout_constraintBottom_toTopOf="@+id/lastUpdate"
+            android:visibility="@{appStatusViewModel.showMapView? View.VISIBLE : View.GONE}"
+            tools:visibility="gone"/>
+
         <TextView
             android:id="@+id/lastUpdate"
             android:layout_width="match_parent"
@@ -111,28 +168,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"/>
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/densityListView"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-            android:scrollbars="vertical"
-            app:layout_constraintTop_toBottomOf="@+id/serviceSubscription"
-            app:layout_constraintBottom_toTopOf="@+id/lastUpdate"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
-
-        <FrameLayout
-            android:id="@+id/frameLayout"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/serviceSubscription"
-            app:layout_constraintBottom_toTopOf="@+id/lastUpdate"
-            android:visibility="@{appStatusViewModel.showMapView? View.VISIBLE : View.GONE}"
-            tools:visibility="gone"/>
 
         <TextView
             style="@style/Warning_message"

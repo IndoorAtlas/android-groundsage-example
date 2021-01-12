@@ -9,6 +9,7 @@ import android.location.LocationManager
 import android.net.ConnectivityManager
 import android.os.Bundle
 import android.util.Log
+import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.Switch
 import android.widget.TextView
@@ -41,6 +42,7 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
 
     @SuppressLint("UseSwitchCompatOrMaterialCode")
     private lateinit var subscriptionSwitch: Switch
+    private lateinit var locateMeButton: Button
     lateinit var adapter: RecyclerAdapter
 
     @SuppressLint("WrongConstant")
@@ -56,6 +58,7 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
         frameLayout = findViewById<FrameLayout>(R.id.frameLayout)
         title = findViewById(R.id.activityTitle)
         subscriptionSwitch = findViewById<Switch>(R.id.subscriptionSwitch)
+        locateMeButton = findViewById<Button>(R.id.locateMeButton)
         lastUpdate = findViewById<TextView>(R.id.lastUpdate)
         appStatusViewModel.selectedFloorLevel.postValue(-999)
         appStatusViewModel.initWarningMessageStatus(this)
@@ -79,6 +82,9 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
             } else {
                 groundSageMgr.stopSubscription()
             }
+        }
+        locateMeButton.setOnClickListener {
+            goToMapView(null)
         }
         startForegroundService()
     }
@@ -105,25 +111,17 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
                 )
                 rows.add(HeaderRow(areaThreshold))
                 rows.add(HeaderRow("Density"))
-                venues[0].densityConfig.densityLevels?.let {
-                    for (i in 1..it.size) {
-                        rows.add(DensityRow(it[i - 1]))
-                    }
+                venues[0].densityConfig.densityLevels?.forEach {
+                    rows.add(DensityRow(it))
                 }
                 rows.add(HeaderRow("Floor"))
-                venues[0].floors.let {
-                    for (i in 1..it.size) {
-                        rows.add(FloorRow(it[i - 1]))
-                    }
+                venues[0].floors.forEach {
+                    rows.add(FloorRow(it))
                 }
                 rows.add(HeaderRow("Area"))
-                venues[0].areas.let {
-                    val areaList = mutableListOf<AreaRow>()
-                    for (i in 1..it.size) {
-                        rows.add(AreaRow(it[i - 1], null))
-                        areaList.add(AreaRow(it[i - 1], null))
-                    }
-                    Venue.setAreaList(areaList)
+                venues[0].areas.forEach {
+                    rows.add(AreaRow(it, null))
+                    Venue.areaList.add(AreaRow(it, null))
                 }
                 adapter = RecyclerAdapter(rows, this)
                 recyclerView.adapter = adapter
@@ -178,18 +176,17 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
         Log.d("MainActivity", "onUpdateDensity")
         //update density status
         appStatusViewModel.updateLastDensityUpdate()
-        venueDensity?.area?.let {
-            for (i in 1..it.size) {
-                val item = rows.first { row ->
-                    row is AreaRow && row.areaProperty.id == it[i - 1].areaId
-                }
-                val area = item as AreaRow
-                area.densityProperty = it[i - 1].densityProperty
+        venueDensity?.area?.forEach {
+            val rowItem = rows.first { row ->
+                row is AreaRow && row.areaProperty.id == it.areaId
             }
-            Venue.clearAreaList()
-            Venue.setAreaList(rows)
-            adapter.notifyDataSetChanged()
+            val areaRow = rowItem as AreaRow
+            areaRow.densityProperty = it.densityProperty
         }
+        adapter.notifyDataSetChanged()
+        Venue.areaList.clear()
+        Venue.setAreaList(rows)
+
         IAGSManager.getInstance(this).extraInfo?.let {
             val traceId = it.traceId.substring(IntRange(0, it.traceId.indexOf(".") - 1))
             appStatusViewModel.traceID.postValue(String.format("Trace ID: $traceId"))
@@ -198,14 +195,18 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
         }
     }
 
-    override fun forwardClick(holder: FloorViewHolder) {
-        Log.d("MainActivity", holder.floorLevel.text as String)
-        appStatusViewModel.selectedFloorLevel.postValue(holder.floor)
+    override fun goToMapView(holder: FloorViewHolder?) {
+        holder?.let {
+            appStatusViewModel.selectedFloorLevel.postValue(holder.floor)
+        } ?: kotlin.run {
+            appStatusViewModel.selectedFloorLevel.postValue(null)
+        }
+
         val fragment = GmapFragment()
         loadFragment(fragment)
     }
 
-    fun loadFragment(fragment: Fragment) {
+    private fun loadFragment(fragment: Fragment) {
         val fragmentTransaction = supportFragmentManager.beginTransaction()
         fragmentTransaction.replace(R.id.frameLayout, fragment).commit()
     }
@@ -213,8 +214,11 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
     override fun onEnterRegion(region: IARegion?) {
         Log.d("MainActivity", "onEnterRegion")
         if (region?.type == IARegion.TYPE_FLOOR_PLAN) {
-            Log.d("MainActivity", "onEnterRegion save region")
-            appStatusViewModel.region.postValue(region)
+            Log.d("MainActivity", "onEnterRegion save floorplan")
+            appStatusViewModel.floorplanRegion.postValue(region)
+        } else if (region?.type == IARegion.TYPE_VENUE) {
+            Log.d("MainActivity", "onEnterRegion save venue")
+            appStatusViewModel.venueRegion.postValue(region)
         }
     }
 
@@ -228,7 +232,7 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
         }
         adapter.notifyDataSetChanged()
 
-        Venue.clearAreaList()
+        Venue.areaList.clear()
         Venue.setAreaList(rows)
     }
 }

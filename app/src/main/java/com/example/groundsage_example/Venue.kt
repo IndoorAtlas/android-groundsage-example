@@ -6,20 +6,12 @@ object Venue {
 
     private var venue : IAGSVenue? = null
 
-    private val areaList = mutableListOf<RecyclerAdapter.AreaRow>()
+    val areaList = mutableListOf<RecyclerAdapter.AreaRow>()
 
     fun getFilteredAreaList(floor: Int):List<RecyclerAdapter.AreaRow>{
         return areaList.filter {
             it.areaProperty.floorLevel == floor
         }
-    }
-
-    fun getAreaList():List<RecyclerAdapter.AreaRow>{
-        return areaList
-    }
-
-    fun clearAreaList(){
-        areaList.removeAll(areaList)
     }
 
     fun setAreaList(list: List<RecyclerAdapter.TableRow>){
