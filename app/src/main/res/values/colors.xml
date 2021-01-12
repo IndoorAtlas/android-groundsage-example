@@ -9,6 +9,9 @@
     <color name="colorExtraGeo">#00f7ff</color>
     <color name="colorExtraGeoOverlap">#ff80ff</color>
     <color name="colorExtraGeoD1D2">#FF9900</color>
+    <color name="colorWayfinding">#7700FF</color>
+    <color name="colorBrown">#805A1E</color>
+    <color name="colorLightGreen">#D5FF00</color>
 
     <!--Circle-->
     <color name="ColorCurrentStrokeCircle">#B35EABF2</color>

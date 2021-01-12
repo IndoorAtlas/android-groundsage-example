@@ -204,8 +204,10 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
                         polylineOptions.add(LatLng(leg.begin.latitude, leg.begin.longitude))
                         polylineOptions.add(LatLng(leg.end.latitude, leg.end.longitude))
                     }
-                    if (leg.begin.floor == floorValue && leg.end.floor == floorValue) {
-                        polylineOptions.color(Color.BLUE)
+                    if (locateMe || (leg.begin.floor == floorValue && leg.end.floor == floorValue)) {
+                        context?.let {
+                            polylineOptions.color(ContextCompat.getColor(it, R.color.colorWayfinding))
+                        }
                     } else {
                         polylineOptions.color(Color.GRAY)
                     }
@@ -239,7 +241,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
 
     private fun setWayfindingTarget(point: LatLng, addMarker: Boolean) {
         mWayfindingDestination =
-            IAWayfindingRequest.Builder().withFloor(floorValue).withLatitude(point.latitude)
+            IAWayfindingRequest.Builder().withFloor(currentFloor).withLatitude(point.latitude)
                 .withLongitude(point.longitude).build()
         mWayfindingDestination?.let {
             groundSageMgr.requestWayfindingUpdates(it, wayfindingListener)
