@@ -32,6 +32,7 @@ import com.indooratlas.sdk.groundsage.data.IAGSVenue
 import com.indooratlas.sdk.groundsage.data.IAGSVenueDensity
 import com.squareup.picasso.Picasso
 import com.squareup.picasso.Target
+import kotlin.math.floor
 
 
 class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListener,
@@ -183,7 +184,6 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
             logText.append("${appStatusViewModel.getCurrentDateTime()} Wayfinding: arrived \n")
         }
         updateRouteVisualization()
-
     }
 
     private fun updateRouteVisualization() {
@@ -191,36 +191,38 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
             it.remove()
         }
         polylines.clear()
+        val polylineOptions = PolylineOptions()
 
         if (mCurrentRoute == null) {
             return
-        }
+        } else {
 
-        val polylineOptions = PolylineOptions()
-        mCurrentRoute?.legs?.size?.let { size ->
-            if (size > 0) {
-                mCurrentRoute?.legs?.forEach { leg ->
-                    if (leg.edgeIndex != null) {
-                        polylineOptions.add(LatLng(leg.begin.latitude, leg.begin.longitude))
-                        polylineOptions.add(LatLng(leg.end.latitude, leg.end.longitude))
-                    }
-                    if (locateMe || (leg.begin.floor == floorValue && leg.end.floor == floorValue)) {
-                        context?.let {
-                            polylineOptions.color(ContextCompat.getColor(it, R.color.colorWayfinding))
-                        }
-                    } else {
-                        polylineOptions.color(Color.GRAY)
-                    }
+            mCurrentRoute?.legs?.forEach { leg ->
+                if (leg.edgeIndex != null) {
+                    polylineOptions.add(LatLng(leg.begin.latitude, leg.begin.longitude))
+                    polylineOptions.add(LatLng(leg.end.latitude, leg.end.longitude))
                 }
-            } else {
-                polylineOptions.color(Color.CYAN)
-                locationMarker?.position?.let { currentPosition ->
-                    mWayfindingDestination?.let { destination ->
-                        polylineOptions.add(currentPosition)
-                        polylineOptions.add(LatLng(destination.latitude, destination.longitude))
+                if (locateMe || mWayfindingDestination?.floor == currentFloor) {
+                    context?.let {
+                        polylineOptions.color(ContextCompat.getColor(it, R.color.colorWayfinding))
                     }
+                } else {
+                    polylineOptions.color(Color.GRAY)
                 }
             }
+            mCurrentRoute?.let{
+                if (it.legs.size <= 0){
+                    circle?.center?.let { currentPosition ->
+                        mWayfindingDestination?.let { destination ->
+                            polylineOptions.add(currentPosition)
+                            polylineOptions.add(LatLng(destination.latitude, destination.longitude))
+                        }
+                    }
+                    polylineOptions.color(Color.CYAN)
+                }
+
+            }
+
         }
 
         polylineOptions.zIndex(95f)
@@ -239,10 +241,13 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
         return routeLength < FINISH_THRESHOLD_METERS
     }
 
-    private fun setWayfindingTarget(point: LatLng, addMarker: Boolean) {
-        mWayfindingDestination =
-            IAWayfindingRequest.Builder().withFloor(currentFloor).withLatitude(point.latitude)
-                .withLongitude(point.longitude).build()
+    private fun setWayfindingTarget(point: LatLng, addMarker: Boolean, floor: Int) {
+        mWayfindingDestination = IAWayfindingRequest.Builder()
+            .withFloor(floor)
+            .withLatitude(point.latitude)
+            .withLongitude(point.longitude).build()
+
+
         mWayfindingDestination?.let {
             groundSageMgr.requestWayfindingUpdates(it, wayfindingListener)
         }
@@ -629,6 +634,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
                     fetchFloorPlanBitmap(it.floorPlan)
                 }
                 if (locateMe) {
+
                     logText.append("${appStatusViewModel.getCurrentDateTime()} update floorplan, geofences\n")
                     appStatusViewModel.selectedFloorLevel.postValue(currentFloor)
                     fetchFloorPlanBitmap(it.floorPlan)
@@ -709,16 +715,11 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
                 locationMarker?.isVisible = true
                 circleOverlay?.fillColor(mapView.context.getColor(R.color.ColorCurrentFillCircle))
                 circleOverlay?.strokeColor(mapView.context.getColor(R.color.ColorCurrentStrokeCircle))
-
             } else {
                 //show grey circle and tell user on other floor
                 circleOverlay?.fillColor(mapView.context.getColor(R.color.ColorOtherFillCircle))
                 circleOverlay?.strokeColor(mapView.context.getColor(R.color.ColorOtherStrokeCircle))
                 locationMarker?.isVisible = false
-                if (currentFloor != it.floorLevel) {
-                    currentFloor = it.floorLevel
-                    logText.append("${appStatusViewModel.getCurrentDateTime()} Your current floor is ${it.floorLevel}\n")
-                }
             }
             circle?.remove()
             circle = gmap.addCircle(circleOverlay)
@@ -738,7 +739,11 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
     override fun onMapClick(point: LatLng?) {
         point?.let {
             if (wayfindingMarker == null && poiMarkers.isEmpty()) {
-                setWayfindingTarget(it, true)
+                if (locateMe){
+                    setWayfindingTarget(it, true, currentFloor)
+                } else {
+                    setWayfindingTarget(it, true, floorValue)
+                }
             }
         }
     }
@@ -756,11 +761,17 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
         }
 
         if (selectedPoiMarker == null) {
+            //start wayfinding
             marker?.let {
                 selectedPoiMarker = it
-                setWayfindingTarget(it.position, false)
+                if (locateMe){
+                    setWayfindingTarget(marker.position, false, currentFloor)
+                } else {
+                    setWayfindingTarget(marker.position, false, floorValue)
+                }
             }
         } else {
+            //stop wayfinding
             if (marker == selectedPoiMarker) {
                 mCurrentRoute = null
                 mWayfindingDestination = null

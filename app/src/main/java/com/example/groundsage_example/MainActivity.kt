@@ -44,6 +44,7 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
     private lateinit var subscriptionSwitch: Switch
     private lateinit var locateMeButton: Button
     lateinit var adapter: RecyclerAdapter
+    private lateinit var groundSageMgr:IAGSManager
 
     @SuppressLint("WrongConstant")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,7 +69,7 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
                 Manifest.permission.ACCESS_FINE_LOCATION
             )
         )
-        val groundSageMgr = IAGSManager.getInstance(this)
+        groundSageMgr = IAGSManager.getInstance(this)
         groundSageMgr.addGroundSageListener(this)
         groundSageMgr.addIARegionListener(this)
         appStatusViewModel.networkAvailable.observe(this, Observer {
@@ -102,7 +103,7 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
     }
 
     private fun requestVenueInfo() {
-        IAGSManager.getInstance(this).requestVenueInfo { venues, error ->
+        groundSageMgr.requestVenueInfo { venues, error ->
             if (venues != null && rows.size == 0) {
                 Venue.setVenue(venues[0])
                 val areaThreshold = String.format(
@@ -127,7 +128,7 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
                 recyclerView.adapter = adapter
 
                 if (subscriptionSwitch.isChecked) {
-                    IAGSManager.getInstance(this).startSubscription()
+                    groundSageMgr.startSubscription()
                 }
             } else {
                 Log.d("MainActivity", "venues is null")
@@ -187,7 +188,7 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
         Venue.areaList.clear()
         Venue.setAreaList(rows)
 
-        IAGSManager.getInstance(this).extraInfo?.let {
+        groundSageMgr.extraInfo?.let {
             val traceId = it.traceId.substring(IntRange(0, it.traceId.indexOf(".") - 1))
             appStatusViewModel.traceID.postValue(String.format("Trace ID: $traceId"))
         } ?: kotlin.run {
