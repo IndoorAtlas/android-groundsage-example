@@ -22,6 +22,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import com.example.groundsage_example.RecyclerAdapter.*
 import com.example.groundsage_example.databinding.ActivityMainBinding
+import com.indooratlas.android.sdk.IALocation
+import com.indooratlas.android.sdk.IALocationListener
 import com.indooratlas.android.sdk.IARegion
 import com.indooratlas.sdk.groundsage.IAGSManager
 import com.indooratlas.sdk.groundsage.IAGSManagerListener
@@ -30,7 +32,7 @@ import com.indooratlas.sdk.groundsage.data.IAGSVenueDensity
 import pub.devrel.easypermissions.EasyPermissions
 
 class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler,
-    IARegion.Listener {
+    IARegion.Listener, IALocationListener {
 
     private lateinit var appStatusViewModel: AppStatusViewModel
     private lateinit var binding: ActivityMainBinding
@@ -72,6 +74,7 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
         groundSageMgr = IAGSManager.getInstance(this)
         groundSageMgr.addGroundSageListener(this)
         groundSageMgr.addIARegionListener(this)
+        groundSageMgr.addIALocationListener(this)
         appStatusViewModel.networkAvailable.observe(this, Observer {
             if (it){
                 requestVenueInfo()
@@ -187,13 +190,6 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
         adapter.notifyDataSetChanged()
         Venue.areaList.clear()
         Venue.setAreaList(rows)
-
-        groundSageMgr.extraInfo?.let {
-            val traceId = it.traceId.substring(IntRange(0, it.traceId.indexOf(".") - 1))
-            appStatusViewModel.traceID.postValue(String.format("Trace ID: $traceId"))
-        } ?: kotlin.run {
-            appStatusViewModel.traceID.postValue(String.format("Trace ID: null"))
-        }
     }
 
     override fun goToMapView(holder: FloorViewHolder?) {
@@ -235,5 +231,18 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
 
         Venue.areaList.clear()
         Venue.setAreaList(rows)
+    }
+
+    override fun onLocationChanged(location: IALocation?) {
+        groundSageMgr.extraInfo?.let {
+            val traceId = it.traceId.substring(IntRange(0, it.traceId.indexOf(".") - 1))
+            appStatusViewModel.traceID.postValue(String.format("Trace ID: $traceId"))
+        } ?: kotlin.run {
+            appStatusViewModel.traceID.postValue(String.format("Trace ID: null"))
+        }
+    }
+
+    override fun onStatusChanged(p0: String?, p1: Int, p2: Bundle?) {
+        //NA
     }
 }
