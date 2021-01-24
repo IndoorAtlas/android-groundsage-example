@@ -69,11 +69,11 @@ class ForegroundService : Service(), IAGSManagerListener {
         super.onDestroy()
     }
 
-    override fun onEnterDensityRegion(region: IARegion, venue: IAGSVenue) {
+    override fun onEnterDensityRegion(region: IARegion) {
         Log.d("ForegroundService", "onEnterDensityRegion")
     }
 
-    override fun onExitDensityRegion(region: IARegion, venue: IAGSVenue) {
+    override fun onExitDensityRegion(region: IARegion) {
         Log.d("ForegroundService", "onExitDensityRegion")
     }
 

@@ -73,8 +73,8 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
         )
         groundSageMgr = IAGSManager.getInstance(this)
         groundSageMgr.addGroundSageListener(this)
-        groundSageMgr.addIARegionListener(this)
-        groundSageMgr.addIALocationListener(this)
+        groundSageMgr.registerRegionListener(this)
+        groundSageMgr.registerLocationListener(this)
         appStatusViewModel.networkAvailable.observe(this, Observer {
             if (it){
                 requestVenueInfo()
@@ -168,11 +168,11 @@ class MainActivity : AppCompatActivity(), IAGSManagerListener, ClickEventHandler
         }
     }
 
-    override fun onEnterDensityRegion(region: IARegion, venue: IAGSVenue) {
+    override fun onEnterDensityRegion(region: IARegion) {
         Log.d("MainActivity", "onEnterDensityRegion")
     }
 
-    override fun onExitDensityRegion(region: IARegion, venue: IAGSVenue) {
+    override fun onExitDensityRegion(region: IARegion) {
         Log.d("MainActivity", "onEnterDensityRegion")
     }
 

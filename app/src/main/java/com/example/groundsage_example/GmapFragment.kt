@@ -289,8 +289,8 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
             context?.let {
                 groundSageMgr = IAGSManager.getInstance(it)
                 groundSageMgr.addGroundSageListener(this)
-                groundSageMgr.addIARegionListener(this)
-                groundSageMgr.addIALocationListener(this)
+                groundSageMgr.registerRegionListener(this)
+                groundSageMgr.registerLocationListener(this)
             }
             //add cloud geofences callback
             initGeofence()
@@ -583,7 +583,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
         })
     }
 
-    override fun onEnterDensityRegion(region: IARegion, venue: IAGSVenue) {
+    override fun onEnterDensityRegion(region: IARegion) {
         logText.append(
             "${appStatusViewModel.getCurrentDateTime()} Enter density region \n" +
                     "name: ${region.name}\n" +
@@ -592,7 +592,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
         )
     }
 
-    override fun onExitDensityRegion(region: IARegion, venue: IAGSVenue) {
+    override fun onExitDensityRegion(region: IARegion) {
         Log.d("GmapFragment", "onExitDensityRegion")
         logText.append(
             "${appStatusViewModel.getCurrentDateTime()} Exit density region\n" +
