@@ -24,8 +24,10 @@ platform :android do
   desc "Upload apk to app center"
   lane :upload_apk do
     owner_name = "IndoorAtlas"
-    app_name = "GS-example-1"
+    app_name = ENV["APP_NAME"]
+    build_env = ENV['BUILD_ENV']
     appcenter_api_token = ENV["APPCENTER_API_TOKEN"]
+    versions_old = 0
     versions_old = appcenter_fetch_version_number(
       api_token: appcenter_api_token,
       owner_name: owner_name,
@@ -42,8 +44,8 @@ platform :android do
         "bintrayUser": "#{ENV["BINTRAY_USER"]}",
         "bintrayApiKey": "#{ENV["BINTRAY_API_KEY"]}",
         "googleMapsApiKey": "#{ENV["MAP_API_KEY"]}",
-        "iagsApiKey": "#{ENV["SITCP_API_KEY"]}",
-        "iagsApiSecret": "#{ENV["SITCP_SECRET"]}"
+        "iagsApiKey": "#{ENV["IA_API_KEY"]}",
+        "iagsApiSecret": "#{ENV["IA_SECRET"]}"
       }
     )
     appcenter_upload(
@@ -59,9 +61,9 @@ platform :android do
       app_name: app_name
     )
     puts versions
-    link = "https://appcenter.ms/orgs/IndoorAtlas/apps/GS-example-1/distribute/releases/#{versions['id']}"
+    link = "https://appcenter.ms/orgs/IndoorAtlas/apps/#{app_name}/distribute/releases/#{versions['id']}"
     slack(
-      message: "GroundSage Android example app #{versions['version']} (#{versions['build_number']}) uploaded to app center.",
+      message: "GroundSage Android example app (#{build_env}) #{versions['version']} (#{versions['build_number']}) uploaded to app center.",
       channel: "#alert-app-release",
       slack_url: "#{ENV["SLACK_URL"]}",
       attachment_properties: {

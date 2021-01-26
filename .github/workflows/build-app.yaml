@@ -35,7 +35,7 @@ jobs:
           gem install bundler
           bundle config set path 'vendor/bundle'
           bundle install
-      - name: upload apk to app center
+      - name: upload apk to app center (Prod CP Office)
         run: bundle exec fastlane android upload_apk
         env:
           BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
@@ -44,6 +44,23 @@ jobs:
           MAP_API_KEY: ${{ secrets.MAP_API_KEY }}
           IAGS_CUSTOM_ENDPOINT: ${{ secrets.IAGS_CUSTOM_ENDPOINT }}
           IA_CUSTOM_ENDPOINT: ${{ secrets.IA_CUSTOM_ENDPOINT }}
-          SITCP_API_KEY: ${{ secrets.PRODCP_API_KEY }}
-          SITCP_SECRET: ${{ secrets.PRODCP_SECRET }}
+          IA_API_KEY: ${{ secrets.PRODCP_API_KEY }}
+          IA_SECRET: ${{ secrets.PRODCP_SECRET }}
           APPCENTER_API_TOKEN: ${{ secrets.APP_CENTER_TOKEN }}
+          APP_NAME: "GS-example-1"
+          BUILD_ENV: "Prod CP Office"
+
+      - name: upload apk to app center (Prod Xiqu)
+        run: bundle exec fastlane android upload_apk
+        env:
+          BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
+          BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}
+          SLACK_URL: ${{ secrets.SLACK_URL }}
+          MAP_API_KEY: ${{ secrets.MAP_API_KEY }}
+          IAGS_CUSTOM_ENDPOINT: ${{ secrets.IAGS_CUSTOM_ENDPOINT }}
+          IA_CUSTOM_ENDPOINT: ${{ secrets.IA_CUSTOM_ENDPOINT }}
+          IA_API_KEY: ${{ secrets.PRODXIQU_API_KEY }}
+          IA_SECRET: ${{ secrets.PRODXIQU_SECRET }}
+          APPCENTER_API_TOKEN: ${{ secrets.ANDROID_APP_CENTER_TOKEN_PROD_XIQU }}
+          APP_NAME: "GS_Android_example_prod_xiqu"
+          BUILD_ENV: "Prod Xiqu"
