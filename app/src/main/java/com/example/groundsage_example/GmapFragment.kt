@@ -563,7 +563,10 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
     }
 
     private fun fetchFloorPlanBitmap(floorPlan: IAFloorPlan) {
-        Picasso.get().load(floorPlan.url).into(object : Target {
+        Picasso.get().load(floorPlan.url)
+            .resize(2048, 0)
+            .onlyScaleDown()
+            .into(object : Target {
             override fun onBitmapLoaded(bitmap: Bitmap?, from: Picasso.LoadedFrom?) {
                 bitmap?.let {
                     setGroundOverlay(it, floorPlan)
