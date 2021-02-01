@@ -284,7 +284,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
 
 
 
-            drawRegions()
+            drawRegions(false)
             drawLabel()
             context?.let {
                 groundSageMgr = IAGSManager.getInstance(it)
@@ -481,7 +481,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
         }
     }
 
-    private fun drawRegions() {
+    private fun drawRegions(isInRegion: Boolean) {
         geofenceMarkerOverlays.clear()
         geofenceMarkers.forEach { p -> p.remove() }
         geofenceMarkers.clear()
@@ -496,10 +496,15 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
         areaList.forEach { area ->
             area.areaProperty.geometry?.let { geometry ->
                 val rectOptions = PolygonOptions().strokeColor(Color.TRANSPARENT)
-                area.densityProperty?.densityColor?.let {color ->
-                    rectOptions.fillColor(color.toInt()) } ?: kotlin.run {
+                if (isInRegion){
+                    area.densityProperty?.densityColor?.let {color ->
+                        rectOptions.fillColor(color.toInt()) } ?: kotlin.run {
+                        rectOptions.fillColor(Color.BLUE)
+                    }
+                } else {
                     rectOptions.fillColor(Color.BLUE)
                 }
+
                 geometry.forEach { point ->
                     rectOptions.add(LatLng(point.latitude, point.longitude))
                 }
@@ -615,7 +620,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
             Venue.areaList.remove(item)
             Venue.areaList.add(RecyclerAdapter.AreaRow(item.areaProperty, it.densityProperty))
         }
-        drawRegions()
+        drawRegions(true)
         drawLabel()
     }
 
@@ -641,7 +646,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
                     logText.append("${appStatusViewModel.getCurrentDateTime()} update floorplan, geofences\n")
                     appStatusViewModel.selectedFloorLevel.postValue(currentFloor)
                     fetchFloorPlanBitmap(it.floorPlan)
-                    drawRegions()
+                    drawRegions(true)
                     drawLabel()
                     if (it.floorPlan.floorLevel == 19) {
                         initDynamicSwitch(true)
@@ -677,17 +682,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
                 poiMarkers.clear()
                 circle?.remove()
 
-                for (i in 1..areaList.size) {
-                    areaList[i - 1].areaProperty.geometry?.let {
-                        val rectOptions = PolygonOptions().fillColor(Color.BLUE)
-                            .strokeColor(Color.TRANSPARENT)
-                        for (j in 1..it.size) {
-                            rectOptions.add(LatLng(it[j - 1].latitude, it[j - 1].longitude))
-                        }
-                        val polygon = gmap.addPolygon(rectOptions)
-                        polygons.add(polygon)
-                    }
-                }
+                drawRegions(false)
             } else if (it.type == IARegion.TYPE_FLOOR_PLAN) {
                 logText.append("${appStatusViewModel.getCurrentDateTime()} Exit IA floorplan: ${region.name} \n")
                 if (locateMe) {
