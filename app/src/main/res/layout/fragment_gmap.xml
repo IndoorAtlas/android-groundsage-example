@@ -72,7 +72,8 @@
             android:layout_height="200dp"
             android:textSize="14dp"
             android:maxLines="100"
-            android:background="@android:color/white"/>
+            android:background="@android:color/white"
+            android:gravity="bottom"/>
 
     </LinearLayout>
 </layout>
