@@ -683,6 +683,7 @@ class GmapFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMapClickListene
                 circle?.remove()
 
                 drawRegions(false)
+                drawLabel()
             } else if (it.type == IARegion.TYPE_FLOOR_PLAN) {
                 logText.append("${appStatusViewModel.getCurrentDateTime()} Exit IA floorplan: ${region.name} \n")
                 if (locateMe) {
